@@ -16,7 +16,62 @@
 //! * For types-only consumers (e.g. API clients), see
 //!   [`oxide-update-engine-types`](oxide_update_engine_types).
 //! * For code to display update engine events as a human-readable
-//!   stream, see [`oxide-update-engine-display`](oxide_update_engine_display).
+//!   stream, see [`oxide-update-engine-display`](https://docs.rs/oxide-update-engine-display).
+//!
+//! # Examples
+//!
+//! A minimal engine that runs a single update step:
+//!
+//! ```
+//! use oxide_update_engine::{
+//!     StepSuccess, UpdateEngine, channel,
+//! };
+//! use oxide_update_engine_types::spec::StepSpec;
+//!
+//! // A StepSpec defines the domain-specific types that flow
+//! // through the engine. Use () for metadata you don't need.
+//! enum MySpec {}
+//! impl StepSpec for MySpec {
+//!     fn spec_name() -> String {
+//!         "example".into()
+//!     }
+//!     type Component = String;
+//!     type StepId = usize;
+//!     type StepMetadata = ();
+//!     type ProgressMetadata = ();
+//!     type CompletionMetadata = ();
+//!     type SkippedMetadata = ();
+//!     type Error = anyhow::Error;
+//! }
+//!
+//! # #[tokio::main]
+//! # async fn main() -> anyhow::Result<()> {
+//! let log =
+//!     slog::Logger::root(slog::Discard, slog::o!());
+//! let (sender, _receiver) = channel::<MySpec>();
+//! let engine = UpdateEngine::new(&log, sender);
+//!
+//! // Steps run sequentially in registration order.
+//! engine
+//!     .new_step(
+//!         "fw".to_owned(),
+//!         1,
+//!         "Write firmware image",
+//!         |_cx| async {
+//!             // ... perform update work here ...
+//!             StepSuccess::new(()).into()
+//!         },
+//!     )
+//!     .register();
+//!
+//! engine.execute().await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! For more complex engines, including engines that have nested local and
+//! remote steps, see [the full
+//! example](https://github.com/oxidecomputer/oxide-update-engine/blob/main/crates/oxide-update-engine-display/examples/basic/main.rs).
 
 mod context;
 mod engine;

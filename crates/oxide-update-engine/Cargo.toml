@@ -43,5 +43,7 @@ pre-release-replacements = [
 [dev-dependencies]
 anyhow.workspace = true
 oxide-update-engine-test-utils.workspace = true
+oxide-update-engine-types.workspace = true
+slog.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream.workspace = true
