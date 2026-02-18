@@ -1,0 +1,58 @@
+[package]
+name = "oxide-update-engine-types"
+version = "0.1.0"
+description = "Serializable types for the oxide-update-engine framework."
+repository.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg=doc_cfg"]
+
+[lints]
+workspace = true
+
+[features]
+schemars08 = ["dep:schemars"]
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+derive-where.workspace = true
+either.workspace = true
+indexmap.workspace = true
+indent_write.workspace = true
+petgraph.workspace = true
+schemars = { workspace = true, optional = true }
+serde.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+slog.workspace = true
+uuid.workspace = true
+
+[package.metadata.cargo-sync-rdme.badge.badges]
+license = true
+crates-io = true
+docs-rs = true
+rust-version = true
+
+[package.metadata.release]
+pre-release-replacements = [
+    { file = "src/lib.rs", search = "^#!\\[doc\\(html_root_url = \"https://docs.rs/oxide-update-engine-types/.*\"\\)\\]$", replace = "#![doc(html_root_url = \"https://docs.rs/oxide-update-engine-types/{{version}}\")]", exactly = 1 },
+]
+
+[dev-dependencies]
+anyhow.workspace = true
+indoc.workspace = true
+oxide-update-engine-test-utils.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "sync", "rt-multi-thread"] }
+tokio-stream.workspace = true
+
+# Integration tests need access to types from petgraph and indexmap.
+[dev-dependencies.indexmap]
+workspace = true
+[dev-dependencies.petgraph]
+workspace = true

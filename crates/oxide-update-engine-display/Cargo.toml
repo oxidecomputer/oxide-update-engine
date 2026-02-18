@@ -1,0 +1,59 @@
+[package]
+name = "oxide-update-engine-display"
+version = "0.1.0"
+description = "Display and rendering utilities for oxide-update-engine events."
+repository.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg=doc_cfg"]
+
+[lints]
+workspace = true
+
+[features]
+schemars08 = ["oxide-update-engine-types/schemars08"]
+
+[dependencies]
+chrono.workspace = true
+debug-ignore.workspace = true
+derive-where.workspace = true
+libsw.workspace = true
+owo-colors.workspace = true
+oxide-update-engine-types.workspace = true
+slog.workspace = true
+swrite.workspace = true
+unicode-width.workspace = true
+
+[package.metadata.cargo-sync-rdme.badge.badges]
+license = true
+crates-io = true
+docs-rs = true
+rust-version = true
+
+[package.metadata.release]
+pre-release-replacements = [
+    { file = "src/lib.rs", search = "^#!\\[doc\\(html_root_url = \"https://docs.rs/oxide-update-engine-display/.*\"\\)\\]$", replace = "#![doc(html_root_url = \"https://docs.rs/oxide-update-engine-display/{{version}}\")]", exactly = 1 },
+]
+
+[dev-dependencies]
+anyhow.workspace = true
+buf-list.workspace = true
+bytes.workspace = true
+camino.workspace = true
+camino-tempfile.workspace = true
+clap.workspace = true
+indicatif.workspace = true
+indexmap.workspace = true
+oxide-update-engine.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+slog-async.workspace = true
+slog-term.workspace = true
+supports-color.workspace = true
+oxide-update-engine-test-utils.workspace = true
+tokio = { workspace = true, features = ["io-util", "fs", "macros", "rt-multi-thread"] }

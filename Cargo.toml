@@ -1,0 +1,60 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/oxide-update-engine",
+    "crates/oxide-update-engine-display",
+    "crates/oxide-update-engine-test-utils",
+    "crates/oxide-update-engine-types",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MPL-2.0"
+rust-version = "1.85"
+repository = "https://github.com/oxidecomputer/oxide-update-engine"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(doc_cfg)"] }
+
+[workspace.dependencies]
+oxide-update-engine-types = { version = "0.1.0", path = "crates/oxide-update-engine-types" }
+oxide-update-engine = { version = "0.1.0", path = "crates/oxide-update-engine" }
+oxide-update-engine-display = { version = "0.1.0", path = "crates/oxide-update-engine-display" }
+oxide-update-engine-test-utils = { version = "0.1.0", path = "crates/oxide-update-engine-test-utils" }
+
+# External deps pinned here.
+anyhow = "1"
+cancel-safe-futures = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+debug-ignore = "1"
+derive-where = "1"
+either = "1"
+futures = "0.3"
+indent_write = "2"
+indexmap = { version = "2", features = ["serde"] }
+libsw = { version = "3.5.0", features = ["tokio"] }
+linear-map = "1"
+owo-colors = "4"
+petgraph = { version = "0.8", default-features = false, features = ["graphmap", "std"] }
+schemars = { version = "0.8", features = ["uuid1"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_with = "3"
+slog = "2"
+swrite = "0.1"
+tokio = { version = "1", features = ["macros", "sync", "time", "rt-multi-thread"] }
+unicode-width = "0.2"
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Dev-only dependencies.
+buf-list = "1"
+bytes = "1"
+camino = { version = "1", features = ["serde1"] }
+camino-tempfile = "1"
+clap = { version = "4", features = ["derive"] }
+indicatif = "0.17"
+indoc = "2"
+slog-async = "2"
+slog-term = "2"
+supports-color = "3"
+tokio-stream = "0.1"
