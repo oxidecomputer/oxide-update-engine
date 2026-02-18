@@ -10,7 +10,6 @@ use std::{fmt, time::Duration};
 pub struct ExecutionSummary {
     pub total_steps: usize,
     pub execution_status: ExecutionStatus,
-    // TODO: status about components
 }
 
 impl ExecutionSummary {

@@ -110,13 +110,22 @@ impl<S: StepSpec> EventBuffer<S> {
         self.event_store.root_execution_id
     }
 
-    /// Returns an execution summary for the root execution ID, if this event buffer is aware of any
-    /// events.
+    /// Returns an execution summary for the root execution ID, if
+    /// this event buffer is aware of any events.
     pub fn root_execution_summary(&self) -> Option<ExecutionSummary> {
-        // XXX: more efficient algorithm
         let root_execution_id = self.root_execution_id()?;
-        let mut summary = self.steps().summarize();
-        summary.swap_remove(&root_execution_id)
+        let mut root_steps: Vec<_> = self
+            .event_store
+            .event_map_value_dfs()
+            .filter_map(|(key, data)| {
+                (key.execution_id == root_execution_id).then_some(data)
+            })
+            .collect();
+
+        // ExecutionSummary::new requires steps in sort-key order.
+        root_steps.sort_unstable_by_key(|data| data.sort_key());
+
+        Some(ExecutionSummary::new(root_execution_id, &root_steps))
     }
 
     /// Returns information about each step, as currently tracked by the buffer,
@@ -1377,11 +1386,25 @@ impl<S: StepSpec> StepStatus<S> {
     }
 
     /// For aborted steps, return the abort reason, otherwise None.
+    ///
+    /// To also obtain the last progress event at the time of the
+    /// abort, use [`Self::aborted_with_progress`].
     pub fn abort_reason(&self) -> Option<&AbortReason> {
-        // TODO: probably want to move last_progress into the `AbortReason`
-        // enum so that we can return it in a reasonable manner here.
         match self {
             Self::Aborted { reason, .. } => Some(reason),
+            _ => None,
+        }
+    }
+
+    /// For aborted steps, return the abort reason together with
+    /// the last progress event (if any), otherwise None.
+    pub fn aborted_with_progress(
+        &self,
+    ) -> Option<(&AbortReason, Option<&ProgressEvent<S>>)> {
+        match self {
+            Self::Aborted { reason, last_progress } => {
+                Some((reason, last_progress.as_ref()))
+            }
             _ => None,
         }
     }

@@ -40,7 +40,7 @@ Everything is parameterized by `S: StepSpec`, a trait that bundles associated ty
 
 Two built-in instantiations:
 - **`GenericSpec<E>`**: all metadata fields are `serde_json::Value`, used as a lowest-common-denominator type for cross-engine communication. Concrete specs round-trip through `into_generic()`/`from_generic()`.
-- **`NestedSpec`** (`= GenericSpec<NestedError>`): for nested engine events flowing upward through the event tree.
+- **`NestedSpec`** (`= GenericSpec<SerializableError>`): for nested engine events flowing upward through the event tree.
 
 ### Event system (types crate, `events.rs`)
 

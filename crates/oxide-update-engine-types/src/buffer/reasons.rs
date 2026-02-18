@@ -211,7 +211,6 @@ pub struct AbortInfo {
 pub struct AbortMessageDisplay<'a, S: StepSpec> {
     reason: &'a AbortReason,
     buffer: &'a EventBuffer<S>,
-    // TODO: color.
 }
 
 impl<'a, S: StepSpec> AbortMessageDisplay<'a, S> {

@@ -10,6 +10,7 @@ use crate::{
     },
     utils::ProgressRatioDisplay,
 };
+use chrono::{DateTime, Utc};
 use libsw::TokioSw;
 use owo_colors::OwoColorize;
 use oxide_update_engine_types::{
@@ -38,6 +39,7 @@ pub struct GroupDisplay<K, W, S: StepSpec> {
     max_width: usize,
     // This is set to the highest value of root_total_elapsed seen from any event reports.
     start_sw: TokioSw,
+    start_time: Option<DateTime<Utc>>,
     single_states: BTreeMap<K, SingleState<S>>,
     formatter: LineDisplayFormatter,
     stats: GroupDisplayStats,
@@ -81,6 +83,7 @@ impl<K: Eq + Ord, W: std::io::Write, S: StepSpec> GroupDisplay<K, W, S> {
             // This creates the stopwatch in the stopped state with duration 0 -- i.e. a minimal
             // value that will be replaced as soon as an event comes in.
             start_sw: TokioSw::new(),
+            start_time: None,
             single_states,
             formatter: LineDisplayFormatter::new(),
             stats: GroupDisplayStats::new(not_started),
@@ -111,6 +114,16 @@ impl<K: Eq + Ord, W: std::io::Write, S: StepSpec> GroupDisplay<K, W, S> {
     #[inline]
     pub fn set_styles(&mut self, styles: LineDisplayStyles) {
         self.formatter.set_styles(styles);
+    }
+
+    /// Sets the start time for all future lines.
+    ///
+    /// If the start time is set, the progress display will be
+    /// relative to that time. Otherwise, only the offset from the
+    /// start of the job will be displayed.
+    #[inline]
+    pub fn set_start_time(&mut self, start_time: DateTime<Utc>) {
+        self.start_time = Some(start_time);
     }
 
     /// Sets the amount of time before new progress events are shown.
@@ -188,9 +201,7 @@ impl<K: Eq + Ord, W: std::io::Write, S: StepSpec> GroupDisplay<K, W, S> {
         let prefix = " ".repeat(self.max_width);
         let mut line = self.formatter.start_line(
             &prefix,
-            // TODO: we don't currently support setting a start time for group
-            // displays. We should do that at some point.
-            None,
+            self.start_time,
             Some(self.start_sw.elapsed()),
         );
         self.stats.format_line(&mut line, header, &self.formatter);

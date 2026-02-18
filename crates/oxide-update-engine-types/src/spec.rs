@@ -134,22 +134,21 @@ impl<E: AsError> StepSpec for GenericSpec<E> {
 }
 
 /// A generic spec used for nested errors.
-pub type NestedSpec = GenericSpec<NestedError>;
+pub type NestedSpec = GenericSpec<SerializableError>;
 
-/// A nested error.
+/// A serializable representation of an error chain.
 ///
-/// This is the error type for [`NestedSpec`]. It can be used to
-/// represent any set of nested errors.
+/// This is the error type for [`NestedSpec`]. It captures the message
+/// and source chain of any `std::error::Error`, enabling errors to be
+/// serialized across process or network boundaries.
 #[derive(Clone, Debug)]
-pub struct NestedError {
-    // TODO: in reality is this used more as a "serializable error" --
-    // we should rename this.
+pub struct SerializableError {
     message: String,
-    source: Option<Box<NestedError>>,
+    source: Option<Box<SerializableError>>,
 }
 
-impl NestedError {
-    /// Creates a new `NestedError` from an error.
+impl SerializableError {
+    /// Creates a new `SerializableError` from an error.
     pub fn new(error: &dyn std::error::Error) -> Self {
         Self {
             message: format!("{}", error),
@@ -157,7 +156,7 @@ impl NestedError {
         }
     }
 
-    /// Creates a new `NestedError` from a message and a list of
+    /// Creates a new `SerializableError` from a message and a list of
     /// causes.
     pub fn from_message_and_causes(
         message: String,
@@ -180,31 +179,31 @@ impl NestedError {
     }
 
     /// Returns the causes of this error as an iterator.
-    pub fn sources(&self) -> NestedErrorSources<'_> {
-        NestedErrorSources { current: self.source.as_deref() }
+    pub fn sources(&self) -> SerializableErrorSources<'_> {
+        SerializableErrorSources { current: self.source.as_deref() }
     }
 }
 
-impl fmt::Display for NestedError {
+impl fmt::Display for SerializableError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.message)
     }
 }
 
-impl std::error::Error for NestedError {
+impl std::error::Error for SerializableError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         self.source.as_ref().map(|s| s as &(dyn std::error::Error + 'static))
     }
 }
 
-/// The sources of a nested error as an iterator.
+/// The sources of a serializable error as an iterator.
 #[derive(Debug)]
-pub struct NestedErrorSources<'a> {
-    current: Option<&'a NestedError>,
+pub struct SerializableErrorSources<'a> {
+    current: Option<&'a SerializableError>,
 }
 
-impl<'a> Iterator for NestedErrorSources<'a> {
-    type Item = &'a NestedError;
+impl<'a> Iterator for SerializableErrorSources<'a> {
+    type Item = &'a SerializableError;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current?;
@@ -213,17 +212,17 @@ impl<'a> Iterator for NestedErrorSources<'a> {
     }
 }
 
-mod nested_error_serde {
+mod serializable_error_serde {
     use super::*;
     use serde::Deserialize;
 
     #[derive(Serialize, Deserialize)]
-    struct SerializedNestedError {
+    struct Ser {
         message: String,
         causes: Vec<String>,
     }
 
-    impl Serialize for NestedError {
+    impl Serialize for SerializableError {
         fn serialize<S: serde::Serializer>(
             &self,
             serializer: S,
@@ -235,18 +234,17 @@ mod nested_error_serde {
                 cause = c.source.as_ref();
             }
 
-            let serialized =
-                SerializedNestedError { message: self.message.clone(), causes };
+            let serialized = Ser { message: self.message.clone(), causes };
             serialized.serialize(serializer)
         }
     }
 
-    impl<'de> Deserialize<'de> for NestedError {
+    impl<'de> Deserialize<'de> for SerializableError {
         fn deserialize<D: serde::Deserializer<'de>>(
             deserializer: D,
         ) -> Result<Self, D::Error> {
-            let serialized = SerializedNestedError::deserialize(deserializer)?;
-            Ok(NestedError::from_message_and_causes(
+            let serialized = Ser::deserialize(deserializer)?;
+            Ok(SerializableError::from_message_and_causes(
                 serialized.message,
                 serialized.causes,
             ))
@@ -254,7 +252,7 @@ mod nested_error_serde {
     }
 }
 
-impl AsError for NestedError {
+impl AsError for SerializableError {
     fn as_error(&self) -> &(dyn std::error::Error + 'static) {
         self
     }

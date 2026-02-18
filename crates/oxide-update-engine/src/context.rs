@@ -9,7 +9,7 @@ use oxide_update_engine_types::{
     buffer::EventBuffer,
     errors::NestedEngineError,
     events::{Event, EventReport, ExecutionUuid, StepEventKind, StepProgress},
-    spec::{NestedError, NestedSpec, StepSpec},
+    spec::{NestedSpec, SerializableError, StepSpec},
 };
 use std::{collections::HashMap, fmt, marker::PhantomData, sync::Mutex};
 use tokio::{
@@ -114,7 +114,7 @@ impl<S: StepSpec> StepContext<S> {
                                     .info
                                     .description
                                     .clone(),
-                                error: NestedError::from_message_and_causes(
+                                error: SerializableError::from_message_and_causes(
                                     message.clone(),
                                     causes.clone(),
                                 ),
