@@ -30,7 +30,6 @@ serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 newtype-uuid.workspace = true
-slog.workspace = true
 uuid.workspace = true
 
 [package.metadata.cargo-sync-rdme.badge.badges]
@@ -51,5 +50,6 @@ indoc.workspace = true
 oxide-update-engine-test-utils.workspace = true
 petgraph.workspace = true
 serde_json.workspace = true
+slog.workspace = true
 tokio = { workspace = true, features = ["macros", "sync", "rt-multi-thread"] }
 tokio-stream.workspace = true
