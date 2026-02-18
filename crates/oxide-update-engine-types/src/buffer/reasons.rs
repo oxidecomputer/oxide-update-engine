@@ -46,13 +46,26 @@ impl CompletionReason {
     }
 }
 
+/// Completion information associated with a step.
 #[derive(Clone, Debug)]
 pub struct CompletionInfo {
+    /// The attempt number of the step.
     pub attempt: usize,
+
+    /// The outcome of the step: success, warning, or skipped.
     pub outcome: StepOutcome<NestedSpec>,
+
+    /// The total elapsed time as reported by the root event.
     pub root_total_elapsed: Duration,
+
+    /// The total elapsed time as reported by the leaf execution event, for
+    /// nested events.
     pub leaf_total_elapsed: Duration,
+
+    /// Duration elapsed for the step.
     pub step_elapsed: Duration,
+
+    /// Duration elapsed for the attempt.
     pub attempt_elapsed: Duration,
 }
 
@@ -81,14 +94,29 @@ impl FailureReason {
     }
 }
 
+/// Information about a failed step.
 #[derive(Clone, Debug)]
 pub struct FailureInfo {
+    /// The total number of attempts made for this step.
     pub total_attempts: usize,
+
+    /// The failure message.
     pub message: String,
+
+    /// Failure causes.
     pub causes: Vec<String>,
+
+    /// The total elapsed time as reported by the root event.
     pub root_total_elapsed: Duration,
+
+    /// The total elapsed time as reported by the leaf execution event, for
+    /// nested events.
     pub leaf_total_elapsed: Duration,
+
+    /// Duration elapsed for the step.
     pub step_elapsed: Duration,
+
+    /// Duration elapsed for the attempt.
     pub attempt_elapsed: Duration,
 }
 
@@ -154,9 +182,13 @@ pub enum WillNotBeRunReason {
     },
 }
 
+/// Information associated with a step aborted by the user.
 #[derive(Clone, Debug)]
 pub struct AbortInfo {
+    /// The last attempt number seen.
     pub attempt: usize,
+
+    /// The message associated with the abort.
     pub message: String,
 
     /// The total elapsed time as reported by the root event.
@@ -165,7 +197,11 @@ pub struct AbortInfo {
     /// The total elapsed time as reported by the leaf execution event, for
     /// nested events.
     pub leaf_total_elapsed: Duration,
+
+    /// Duration elapsed for the step.
     pub step_elapsed: Duration,
+
+    /// Duration elapsed for the attempt.
     pub attempt_elapsed: Duration,
 }
 
