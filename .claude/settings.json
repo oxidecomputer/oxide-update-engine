@@ -5,6 +5,7 @@
       "Bash(wc:*)",
       "Bash(grep:*)",
       "Bash(head:*)",
+      "Bash(cargo build:*)",
       "Bash(cargo tree:*)",
       "Bash(cargo test:*)",
       "Bash(cargo check:*)",

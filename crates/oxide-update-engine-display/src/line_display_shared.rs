@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use owo_colors::OwoColorize;
 use oxide_update_engine_types::{
     ExecutionId,
-    buffer::{EventBuffer, ExecutionTerminalInfo, StepKey, TerminalKind},
+    buffer::{EventBuffer, ExecutionTerminalInfo, TerminalKind},
     events::{
         ProgressCounter, ProgressEvent, ProgressEventKind, StepEvent,
         StepEventKind, StepInfo, StepOutcome,
@@ -434,24 +434,18 @@ impl LineDisplaySharedContext<'_> {
                 out.add_line(line);
             }
             StepEventKind::Nested { step, event, .. } => {
-                // Look up the child event's ID to add to the nest data.
-                let child_step_key = StepKey {
-                    execution_id: event.execution_id,
-                    // XXX: we currently look up index 0 because that should
-                    // always exist (unless no steps are defined, in which case
-                    // we skip this). The child index is actually shared by all
-                    // steps within an execution. Fix this by changing
-                    // EventBuffer to also track general per-execution data.
-                    index: 0,
-                };
-                let Some(child_step_data) = buffer.get(&child_step_key) else {
-                    // This should only happen if no steps are defined. See TODO
-                    // above.
+                // Look up per-execution data for the child execution.
+                let Some(child_execution_data) =
+                    buffer.get_execution_data(&event.execution_id)
+                else {
+                    // This should only happen if no steps are defined.
                     return;
                 };
-                let (_, child_index) = child_step_data
+                let (_, child_index) = child_execution_data
                     .parent_key_and_child_index()
-                    .expect("child steps should have a child index");
+                    .expect(
+                        "nested executions have a parent key and child index",
+                    );
 
                 nest_data.add_nest_level(step.info.index, child_index);
 
@@ -556,15 +550,12 @@ impl LineDisplaySharedContext<'_> {
                 attempt_elapsed,
                 ..
             } => {
-                let step_key = StepKey {
-                    execution_id: progress_event.execution_id,
-                    index: step.info.index,
-                };
-                let step_data =
-                    buffer.get(&step_key).expect("step key must exist");
+                let execution_data = buffer
+                    .get_execution_data(&progress_event.execution_id)
+                    .expect("execution data must exist");
                 let ld_step_info = LineDisplayStepInfo {
                     step_info: &step.info,
-                    total_steps: step_data.total_steps(),
+                    total_steps: execution_data.total_steps(),
                     nest_data: &nest_data,
                 };
 
@@ -622,24 +613,18 @@ impl LineDisplaySharedContext<'_> {
                 out.add_line(line);
             }
             ProgressEventKind::Nested { step, event, .. } => {
-                // Look up the child event's ID to add to the nest data.
-                let child_step_key = StepKey {
-                    execution_id: event.execution_id,
-                    // XXX: we currently look up index 0 because that should
-                    // always exist (unless no steps are defined, in which case
-                    // we skip this). The child index is actually shared by all
-                    // steps within an execution. Fix this by changing
-                    // EventBuffer to also track general per-execution data.
-                    index: 0,
-                };
-                let Some(child_step_data) = buffer.get(&child_step_key) else {
-                    // This should only happen if no steps are defined. See TODO
-                    // above.
+                // Look up per-execution data for the child execution.
+                let Some(child_execution_data) =
+                    buffer.get_execution_data(&event.execution_id)
+                else {
+                    // This should only happen if no steps are defined.
                     return;
                 };
-                let (_, child_index) = child_step_data
+                let (_, child_index) = child_execution_data
                     .parent_key_and_child_index()
-                    .expect("child steps should have a child index");
+                    .expect(
+                        "nested executions have a parent key and child index",
+                    );
 
                 nest_data.add_nest_level(step.info.index, child_index);
 
@@ -969,11 +954,12 @@ impl<'a, S: StepSpec> LineDisplayStepInfo<'a, S> {
         step_info: &'a StepInfo<S>,
         nest_data: &'a NestData,
     ) -> Self {
-        let step_key = StepKey { execution_id, index: step_info.index };
-        let step_data = buffer.get(&step_key).expect("step key must exist");
+        let execution_data = buffer
+            .get_execution_data(&execution_id)
+            .expect("execution data must exist");
         LineDisplayStepInfo {
             step_info,
-            total_steps: step_data.total_steps(),
+            total_steps: execution_data.total_steps(),
             nest_data,
         }
     }

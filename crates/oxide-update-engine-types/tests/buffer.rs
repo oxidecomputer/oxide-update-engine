@@ -585,6 +585,9 @@ fn ensure_buffers_similar<S: StepSpec>(
         buf2_steps.as_slice().len()
     );
 
+    // Collect unique execution IDs to compare per-execution data.
+    let mut execution_ids_seen = HashSet::new();
+
     for (ix, ((k1, data1), (k2, data2))) in buf1_steps
         .as_slice()
         .iter()
@@ -605,21 +608,41 @@ fn ensure_buffers_similar<S: StepSpec>(
             data1.__test_sort_key(),
             data2.__test_sort_key()
         );
-        ensure!(
-            data1.parent_key_and_child_index()
-                == data2.parent_key_and_child_index(),
-            "buffers have same parent key and child index at index {} ({:?} vs {:?})",
-            ix,
-            data1.parent_key_and_child_index(),
-            data2.parent_key_and_child_index(),
-        );
-        ensure!(
-            data1.nest_level() == data2.nest_level(),
-            "buffers have same nest level at index {} ({:?} vs {:?})",
-            ix,
-            data1.nest_level(),
-            data2.nest_level(),
-        );
+
+        // Compare per-execution data once per unique execution ID.
+        if execution_ids_seen.insert(k1.execution_id) {
+            let exec1 = buf1
+                .get_execution_data(&k1.execution_id)
+                .expect("execution data must exist in buf1");
+            let exec2 = buf2
+                .get_execution_data(&k1.execution_id)
+                .expect("execution data must exist in buf2");
+            ensure!(
+                exec1.parent_key_and_child_index()
+                    == exec2.parent_key_and_child_index(),
+                "buffers have same parent key and child index \
+                 for execution {:?} ({:?} vs {:?})",
+                k1.execution_id,
+                exec1.parent_key_and_child_index(),
+                exec2.parent_key_and_child_index(),
+            );
+            ensure!(
+                exec1.nest_level() == exec2.nest_level(),
+                "buffers have same nest level \
+                 for execution {:?} ({:?} vs {:?})",
+                k1.execution_id,
+                exec1.nest_level(),
+                exec2.nest_level(),
+            );
+            ensure!(
+                exec1.total_steps() == exec2.total_steps(),
+                "buffers have same total steps \
+                 for execution {:?} ({:?} vs {:?})",
+                k1.execution_id,
+                exec1.total_steps(),
+                exec2.total_steps(),
+            );
+        }
     }
 
     Ok(())

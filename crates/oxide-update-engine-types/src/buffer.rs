@@ -135,6 +135,14 @@ impl<S: StepSpec> EventBuffer<S> {
         self.event_store.map.get(step_key)
     }
 
+    /// Returns per-execution data for the given execution ID.
+    pub fn get_execution_data(
+        &self,
+        execution_id: &ExecutionId,
+    ) -> Option<&EventBufferExecutionData> {
+        self.event_store.execution_map.get(execution_id)
+    }
+
     /// Generates an [`EventReport`] for this buffer.
     ///
     /// This report can be serialized and sent over the wire.
@@ -277,6 +285,7 @@ struct EventStore<S: StepSpec> {
     event_tree: DiGraphMap<EventTreeNode, ()>,
     root_execution_id: Option<ExecutionId>,
     map: HashMap<StepKey, EventBufferStepData<S>>,
+    execution_map: HashMap<ExecutionId, EventBufferExecutionData>,
 }
 
 impl<S: StepSpec> EventStore<S> {
@@ -326,47 +335,53 @@ impl<S: StepSpec> EventStore<S> {
                 self.root_execution_id = Some(new_execution.execution_id);
             }
 
-            if let Some((first_step_key, ..)) =
-                new_execution.steps_to_add.first()
-            {
-                // Do we already know about this execution? If so, grab the parent
-                // key and child index from the first step.
-                let parent_key_and_child_index = if let Some(data) =
-                    self.map.get(first_step_key)
-                {
-                    data.parent_key_and_child_index
-                } else if let Some(parent_key) = new_execution.parent_key {
-                    match self.map.get_mut(&parent_key) {
-                        Some(parent_data) => {
-                            let child_index = parent_data.child_executions_seen;
-                            parent_data.child_executions_seen += 1;
-                            Some((parent_key, child_index))
-                        }
-                        None => {
-                            // This should never happen -- it indicates that the
-                            // parent key was unknown. This can happen if we
-                            // didn't receive an event regarding a parent
-                            // execution being started.
-                            None
-                        }
-                    }
-                } else {
-                    None
-                };
-
+            if !new_execution.steps_to_add.is_empty() {
                 let total_steps = new_execution.steps_to_add.len();
+
+                // Populate execution-level data, computing
+                // parent_key_and_child_index if this is a new execution.
+                // Use or_insert_with to preserve idempotent replay behavior.
+                self.execution_map
+                    .entry(new_execution.execution_id)
+                    .or_insert_with(|| {
+                        let parent_key_and_child_index =
+                            if let Some(parent_key) = new_execution.parent_key {
+                                match self.map.get_mut(&parent_key) {
+                                    Some(parent_data) => {
+                                        let child_index =
+                                            parent_data.child_executions_seen;
+                                        parent_data.child_executions_seen += 1;
+                                        Some((parent_key, child_index))
+                                    }
+                                    None => {
+                                        // This should never happen -- it
+                                        // indicates that the parent key was
+                                        // unknown. This can happen if we didn't
+                                        // receive an event regarding a parent
+                                        // execution being started.
+                                        None
+                                    }
+                                }
+                            } else {
+                                None
+                            };
+
+                        EventBufferExecutionData {
+                            parent_key_and_child_index,
+                            nest_level: new_execution.nest_level,
+                            total_steps,
+                        }
+                    });
+
                 for (new_step_key, new_step, sort_key) in
                     new_execution.steps_to_add
                 {
-                    // These are brand new steps so their keys shouldn't exist in the
-                    // map. But if they do, don't overwrite them.
+                    // These are brand new steps so their keys shouldn't exist
+                    // in the map. But if they do, don't overwrite them.
                     self.map.entry(new_step_key).or_insert_with(|| {
                         EventBufferStepData::new(
                             new_step,
-                            parent_key_and_child_index,
                             sort_key,
-                            new_execution.nest_level,
-                            total_steps,
                             root_event_index,
                         )
                     });
@@ -960,55 +975,18 @@ impl<'buf, S: StepSpec> EventBufferSteps<'buf, S> {
     }
 }
 
-/// Step-related data for a particular key.
-#[derive_where(Clone, Debug)]
-pub struct EventBufferStepData<S: StepSpec> {
-    step_info: StepInfo<NestedSpec>,
-
-    sort_key: StepSortKey,
-
-    // TODO: These steps are common to each execution, but are stored separately
-    // here. These should likely move into EventBufferExecutionData.
+/// Per-execution data tracked by the event buffer.
+///
+/// Unlike [`EventBufferStepData`], which is keyed by individual step,
+/// this data is shared across all steps within a single execution.
+#[derive(Clone, Debug)]
+pub struct EventBufferExecutionData {
     parent_key_and_child_index: Option<(StepKey, usize)>,
     nest_level: usize,
     total_steps: usize,
-    child_executions_seen: usize,
-
-    // Invariant: stored in order sorted by leaf event index.
-    high_priority: Vec<StepEvent<S>>,
-    step_status: StepStatus<S>,
-    // The last root event index that caused the data within this step to be
-    // updated.
-    last_root_event_index: RootEventIndex,
 }
 
-impl<S: StepSpec> EventBufferStepData<S> {
-    fn new(
-        step_info: StepInfo<NestedSpec>,
-        parent_key_and_child_index: Option<(StepKey, usize)>,
-        sort_key: StepSortKey,
-        nest_level: usize,
-        total_steps: usize,
-        root_event_index: RootEventIndex,
-    ) -> Self {
-        Self {
-            step_info,
-            parent_key_and_child_index,
-            sort_key,
-            nest_level,
-            total_steps,
-            child_executions_seen: 0,
-            high_priority: Vec::new(),
-            step_status: StepStatus::NotStarted,
-            last_root_event_index: root_event_index,
-        }
-    }
-
-    #[inline]
-    pub fn step_info(&self) -> &StepInfo<NestedSpec> {
-        &self.step_info
-    }
-
+impl EventBufferExecutionData {
     #[inline]
     pub fn parent_key_and_child_index(&self) -> Option<(StepKey, usize)> {
         self.parent_key_and_child_index
@@ -1022,6 +1000,45 @@ impl<S: StepSpec> EventBufferStepData<S> {
     #[inline]
     pub fn total_steps(&self) -> usize {
         self.total_steps
+    }
+}
+
+/// Step-related data for a particular key.
+#[derive_where(Clone, Debug)]
+pub struct EventBufferStepData<S: StepSpec> {
+    step_info: StepInfo<NestedSpec>,
+
+    sort_key: StepSortKey,
+
+    child_executions_seen: usize,
+
+    // Invariant: stored in order sorted by leaf event index.
+    high_priority: Vec<StepEvent<S>>,
+    step_status: StepStatus<S>,
+    // The last root event index that caused the data within this step to be
+    // updated.
+    last_root_event_index: RootEventIndex,
+}
+
+impl<S: StepSpec> EventBufferStepData<S> {
+    fn new(
+        step_info: StepInfo<NestedSpec>,
+        sort_key: StepSortKey,
+        root_event_index: RootEventIndex,
+    ) -> Self {
+        Self {
+            step_info,
+            sort_key,
+            child_executions_seen: 0,
+            high_priority: Vec::new(),
+            step_status: StepStatus::NotStarted,
+            last_root_event_index: root_event_index,
+        }
+    }
+
+    #[inline]
+    pub fn step_info(&self) -> &StepInfo<NestedSpec> {
+        &self.step_info
     }
 
     #[inline]
