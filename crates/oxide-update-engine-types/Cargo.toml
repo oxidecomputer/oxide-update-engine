@@ -15,7 +15,7 @@ rustdoc-args = ["--cfg=doc_cfg"]
 workspace = true
 
 [features]
-schemars08 = ["dep:schemars"]
+schemars08 = ["dep:schemars", "newtype-uuid/schemars08"]
 
 [dependencies]
 anyhow.workspace = true
@@ -29,6 +29,7 @@ schemars = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
+newtype-uuid.workspace = true
 slog.workspace = true
 uuid.workspace = true
 

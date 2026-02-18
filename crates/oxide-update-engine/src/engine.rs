@@ -12,11 +12,10 @@ use derive_where::derive_where;
 use futures::{future::BoxFuture, prelude::*};
 use linear_map::LinearMap;
 use oxide_update_engine_types::{
-    ExecutionId,
     events::{
-        Event, ProgressEvent, ProgressEventKind, StepComponentSummary,
-        StepEvent, StepEventKind, StepInfo, StepInfoWithMetadata, StepOutcome,
-        StepProgress,
+        Event, ExecutionUuid, ProgressEvent, ProgressEventKind,
+        StepComponentSummary, StepEvent, StepEventKind, StepInfo,
+        StepInfoWithMetadata, StepOutcome, StepProgress,
     },
     spec::{AsError, NestedSpec, StepSpec},
 };
@@ -32,8 +31,6 @@ use tokio::{
     sync::{mpsc, oneshot},
     time::Instant,
 };
-use uuid::Uuid;
-
 /// Creates an MPSC channel suitable to be passed into the update engine.
 ///
 /// This function is a convenience wrapper around
@@ -51,7 +48,7 @@ pub fn channel<S: StepSpec>()
 #[derive_where(Debug)]
 pub struct UpdateEngine<'a, S: StepSpec> {
     log: slog::Logger,
-    execution_id: ExecutionId,
+    execution_id: ExecutionUuid,
     sender: EngineSender<S>,
 
     // This is set to None in Self::execute.
@@ -89,7 +86,7 @@ impl<'a, S: StepSpec + 'a> UpdateEngine<'a, S> {
     }
 
     fn new_impl(log: &slog::Logger, sender: EngineSender<S>) -> Self {
-        let execution_id = ExecutionId(Uuid::new_v4());
+        let execution_id = ExecutionUuid::new_v4();
         let (canceler, cancel_receiver) = coop_cancel::new_pair();
         Self {
             log: log.new(slog::o!(
@@ -108,7 +105,7 @@ impl<'a, S: StepSpec + 'a> UpdateEngine<'a, S> {
     ///
     /// All events coming from this engine will have this ID associated
     /// with them.
-    pub fn execution_id(&self) -> ExecutionId {
+    pub fn execution_id(&self) -> ExecutionUuid {
         self.execution_id
     }
 
@@ -991,7 +988,7 @@ impl<S: StepSpec> StepExec<'_, S> {
 
 #[derive_where(Debug)]
 struct ExecutionContext<S: StepSpec, F> {
-    execution_id: ExecutionId,
+    execution_id: ExecutionUuid,
     next_event_index: DebugIgnore<F>,
     total_start: Instant,
     sender: EngineSender<S>,
@@ -999,7 +996,7 @@ struct ExecutionContext<S: StepSpec, F> {
 
 impl<S: StepSpec, F> ExecutionContext<S, F> {
     fn new(
-        execution_id: ExecutionId,
+        execution_id: ExecutionUuid,
         next_event_index: F,
         sender: EngineSender<S>,
     ) -> Self {
@@ -1028,7 +1025,7 @@ impl<S: StepSpec, F> ExecutionContext<S, F> {
 
 #[derive_where(Debug)]
 struct StepExecutionContext<S: StepSpec, F> {
-    execution_id: ExecutionId,
+    execution_id: ExecutionUuid,
     next_event_index: DebugIgnore<F>,
     total_start: Instant,
     step_info: StepInfoWithMetadata<S>,
@@ -1060,7 +1057,7 @@ type StepExecFn<'a, S> = Box<
 >;
 
 struct StepProgressReporter<S: StepSpec, F> {
-    execution_id: ExecutionId,
+    execution_id: ExecutionUuid,
     next_event_index: F,
     total_start: Instant,
     step_info: StepInfoWithMetadata<S>,

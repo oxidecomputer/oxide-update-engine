@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use super::{EventBufferStepData, StepKey, StepStatus};
-use crate::{ExecutionId, spec::StepSpec};
+use crate::{events::ExecutionUuid, spec::StepSpec};
 use std::{fmt, time::Duration};
 
 #[derive(Clone, Debug)]
@@ -16,7 +16,7 @@ pub struct ExecutionSummary {
 impl ExecutionSummary {
     // steps should be in order.
     pub(super) fn new<S: StepSpec>(
-        execution_id: ExecutionId,
+        execution_id: ExecutionUuid,
         steps: &[&EventBufferStepData<S>],
     ) -> Self {
         let total_steps = steps.len();

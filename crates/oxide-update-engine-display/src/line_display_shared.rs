@@ -8,11 +8,10 @@ use crate::{line_display::LineDisplayStyles, utils::ProgressRatioDisplay};
 use chrono::{DateTime, Utc};
 use owo_colors::OwoColorize;
 use oxide_update_engine_types::{
-    ExecutionId,
     buffer::{EventBuffer, ExecutionTerminalInfo, TerminalKind},
     events::{
-        ProgressCounter, ProgressEvent, ProgressEventKind, StepEvent,
-        StepEventKind, StepInfo, StepOutcome,
+        ExecutionUuid, ProgressCounter, ProgressEvent, ProgressEventKind,
+        StepEvent, StepEventKind, StepInfo, StepOutcome,
     },
     spec::StepSpec,
 };
@@ -33,7 +32,7 @@ pub(crate) struct LineDisplayShared {
     // The start time, if provided.
     start_time: Option<DateTime<Utc>>,
     // This is a map from root execution ID to data about it.
-    execution_data: HashMap<ExecutionId, ExecutionData>,
+    execution_data: HashMap<ExecutionUuid, ExecutionData>,
 }
 
 impl LineDisplayShared {
@@ -441,9 +440,8 @@ impl LineDisplaySharedContext<'_> {
                     // This should only happen if no steps are defined.
                     return;
                 };
-                let (_, child_index) = child_execution_data
-                    .parent_key_and_child_index()
-                    .expect(
+                let (_, child_index) =
+                    child_execution_data.parent_key_and_child_index().expect(
                         "nested executions have a parent key and child index",
                     );
 
@@ -620,9 +618,8 @@ impl LineDisplaySharedContext<'_> {
                     // This should only happen if no steps are defined.
                     return;
                 };
-                let (_, child_index) = child_execution_data
-                    .parent_key_and_child_index()
-                    .expect(
+                let (_, child_index) =
+                    child_execution_data.parent_key_and_child_index().expect(
                         "nested executions have a parent key and child index",
                     );
 
@@ -950,7 +947,7 @@ pub(crate) struct LineDisplayStepInfo<'a, S: StepSpec> {
 impl<'a, S: StepSpec> LineDisplayStepInfo<'a, S> {
     fn new<S2: StepSpec>(
         buffer: &'a EventBuffer<S2>,
-        execution_id: ExecutionId,
+        execution_id: ExecutionUuid,
         step_info: &'a StepInfo<S>,
         nest_data: &'a NestData,
     ) -> Self {

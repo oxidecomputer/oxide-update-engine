@@ -2,16 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use super::reasons::{
-    AbortInfo, AbortReason, CompletionInfo, CompletionReason, FailureInfo,
-    FailureReason, WillNotBeRunReason,
+use super::{
+    reasons::{
+        AbortInfo, AbortReason, CompletionInfo, CompletionReason, FailureInfo,
+        FailureReason, WillNotBeRunReason,
+    },
+    summary::ExecutionSummary,
 };
-use super::summary::ExecutionSummary;
 use crate::{
-    ExecutionId,
     events::{
-        Event, EventReport, ProgressEvent, ProgressEventKind, StepEvent,
-        StepEventKind, StepEventPriority, StepInfo,
+        Event, EventReport, ExecutionUuid, ProgressEvent, ProgressEventKind,
+        StepEvent, StepEventKind, StepEventPriority, StepInfo,
     },
     spec::{NestedSpec, StepSpec},
 };
@@ -105,7 +106,7 @@ impl<S: StepSpec> EventBuffer<S> {
 
     /// Returns the root execution ID, if this event buffer is aware of any
     /// events.
-    pub fn root_execution_id(&self) -> Option<ExecutionId> {
+    pub fn root_execution_id(&self) -> Option<ExecutionUuid> {
         self.event_store.root_execution_id
     }
 
@@ -143,7 +144,7 @@ impl<S: StepSpec> EventBuffer<S> {
     /// Returns per-execution data for the given execution ID.
     pub fn get_execution_data(
         &self,
-        execution_id: &ExecutionId,
+        execution_id: &ExecutionUuid,
     ) -> Option<&EventBufferExecutionData> {
         self.event_store.execution_map.get(execution_id)
     }
@@ -231,7 +232,7 @@ impl<S: StepSpec> EventBuffer<S> {
     #[doc(hidden)]
     pub fn __test_verify_single_root(
         &self,
-        root_execution_id: ExecutionId,
+        root_execution_id: ExecutionUuid,
     ) -> Result<(), String> {
         use petgraph::Direction;
 
@@ -288,9 +289,9 @@ struct EventStore<S: StepSpec> {
     // straightforward algorithms below compared to alternatives like storing
     // trees using Box pointers.
     event_tree: DiGraphMap<EventTreeNode, ()>,
-    root_execution_id: Option<ExecutionId>,
+    root_execution_id: Option<ExecutionUuid>,
     map: HashMap<StepKey, EventBufferStepData<S>>,
-    execution_map: HashMap<ExecutionId, EventBufferExecutionData>,
+    execution_map: HashMap<ExecutionUuid, EventBufferExecutionData>,
 }
 
 impl<S: StepSpec> EventStore<S> {
@@ -349,27 +350,30 @@ impl<S: StepSpec> EventStore<S> {
                 self.execution_map
                     .entry(new_execution.execution_id)
                     .or_insert_with(|| {
-                        let parent_key_and_child_index =
-                            if let Some(parent_key) = new_execution.parent_key {
-                                match self.map.get_mut(&parent_key) {
-                                    Some(parent_data) => {
-                                        let child_index =
-                                            parent_data.child_executions_seen;
-                                        parent_data.child_executions_seen += 1;
-                                        Some((parent_key, child_index))
-                                    }
-                                    None => {
-                                        // This should never happen -- it
-                                        // indicates that the parent key was
-                                        // unknown. This can happen if we didn't
-                                        // receive an event regarding a parent
-                                        // execution being started.
-                                        None
-                                    }
+                        let parent_key_and_child_index = if let Some(
+                            parent_key,
+                        ) =
+                            new_execution.parent_key
+                        {
+                            match self.map.get_mut(&parent_key) {
+                                Some(parent_data) => {
+                                    let child_index =
+                                        parent_data.child_executions_seen;
+                                    parent_data.child_executions_seen += 1;
+                                    Some((parent_key, child_index))
                                 }
-                            } else {
-                                None
-                            };
+                                None => {
+                                    // This should never happen -- it
+                                    // indicates that the parent key was
+                                    // unknown. This can happen if we didn't
+                                    // receive an event regarding a parent
+                                    // execution being started.
+                                    None
+                                }
+                            }
+                        } else {
+                            None
+                        };
 
                         EventBufferExecutionData {
                             parent_key_and_child_index,
@@ -665,7 +669,7 @@ impl<S: StepSpec> EventStore<S> {
         }
     }
 
-    fn add_root_node(&mut self, execution_id: ExecutionId) -> EventTreeNode {
+    fn add_root_node(&mut self, execution_id: ExecutionUuid) -> EventTreeNode {
         self.event_tree.add_node(EventTreeNode::Root(execution_id))
     }
 
@@ -918,7 +922,7 @@ struct RecurseActions {
 #[derive(Clone, Debug)]
 struct NewExecutionAction {
     // An execution ID corresponding to a new run, if seen.
-    execution_id: ExecutionId,
+    execution_id: ExecutionUuid,
 
     // The parent key for this execution, if this is a nested step.
     parent_key: Option<StepKey>,
@@ -959,8 +963,8 @@ impl<'buf, S: StepSpec> EventBufferSteps<'buf, S> {
     ///
     /// Values are returned as an `IndexMap`, in order of when execution IDs
     /// were first defined.
-    pub fn summarize(&self) -> IndexMap<ExecutionId, ExecutionSummary> {
-        let mut by_execution_id: IndexMap<ExecutionId, Vec<_>> =
+    pub fn summarize(&self) -> IndexMap<ExecutionUuid, ExecutionSummary> {
+        let mut by_execution_id: IndexMap<ExecutionUuid, Vec<_>> =
             IndexMap::new();
         // Index steps by execution key.
         for &(step_key, data) in &self.steps {
@@ -1445,14 +1449,14 @@ impl StepSortKey {
 /// Keys for the event tree.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 enum EventTreeNode {
-    Root(ExecutionId),
+    Root(ExecutionUuid),
     Step(StepKey),
 }
 
 /// A unique identifier for a group of step or progress events.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StepKey {
-    pub execution_id: ExecutionId,
+    pub execution_id: ExecutionUuid,
     pub index: usize,
 }
 

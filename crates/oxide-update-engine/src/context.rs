@@ -6,10 +6,9 @@ use crate::{UpdateEngine, errors::ExecutionError};
 use derive_where::derive_where;
 use futures::FutureExt;
 use oxide_update_engine_types::{
-    ExecutionId,
     buffer::EventBuffer,
     errors::NestedEngineError,
-    events::{Event, EventReport, StepEventKind, StepProgress},
+    events::{Event, EventReport, ExecutionUuid, StepEventKind, StepProgress},
     spec::{NestedError, NestedSpec, StepSpec},
 };
 use std::{collections::HashMap, fmt, marker::PhantomData, sync::Mutex};
@@ -36,7 +35,7 @@ pub struct StepContext<S: StepSpec> {
     // This is keyed by root execution ID in case there are multiple
     // nested events taking place. Each `NestedEventBuffer` tracks one
     // such execution ID.
-    nested_buffers: Mutex<HashMap<ExecutionId, NestedEventBuffer>>,
+    nested_buffers: Mutex<HashMap<ExecutionUuid, NestedEventBuffer>>,
 }
 
 impl<S: StepSpec> StepContext<S> {

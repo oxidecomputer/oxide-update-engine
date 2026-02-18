@@ -6,9 +6,8 @@ use anyhow::bail;
 use futures::StreamExt;
 use oxide_update_engine::{StepContext, StepSuccess, UpdateEngine};
 use oxide_update_engine_types::{
-    ExecutionId,
     buffer::EventBuffer,
-    events::{Event, ProgressUnits, StepProgress},
+    events::{Event, ExecutionUuid, ProgressUnits, StepProgress},
     spec::StepSpec,
 };
 use tokio::sync::oneshot;
@@ -32,8 +31,8 @@ impl StepSpec for TestSpec {
 
 pub static TEST_EXECUTION_UUID: &str = "2cc08a14-5e96-4917-bc70-e98293a3b703";
 
-pub fn test_execution_id() -> ExecutionId {
-    ExecutionId(TEST_EXECUTION_UUID.parse().expect("valid UUID"))
+pub fn test_execution_id() -> ExecutionUuid {
+    TEST_EXECUTION_UUID.parse().expect("parsed UUID")
 }
 
 #[derive(Copy, Clone, Debug)]

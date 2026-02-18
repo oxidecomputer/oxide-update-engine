@@ -9,14 +9,51 @@
 //! over the wire with schema support.
 
 use crate::{
-    ExecutionId,
     errors::ConvertGenericError,
     spec::{AsError, GenericSpec, NestedSpec, StepSpec},
 };
 use derive_where::derive_where;
+use newtype_uuid::{TypedUuid, TypedUuidKind, TypedUuidTag};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::deserialize_ignore_any;
 use std::{borrow::Cow, fmt, time::Duration};
+
+/// Marker type for [`ExecutionUuid`].
+pub enum ExecutionUuidKind {}
+
+impl TypedUuidKind for ExecutionUuidKind {
+    #[inline]
+    fn tag() -> TypedUuidTag {
+        const TAG: TypedUuidTag = TypedUuidTag::new("execution_id");
+        TAG
+    }
+
+    #[inline]
+    fn alias() -> Option<&'static str> {
+        // Used by the schemars integration to produce schema name
+        // "ExecutionUuid" (matching the type alias).
+        Some("ExecutionUuid")
+    }
+}
+
+#[cfg(feature = "schemars08")]
+impl schemars::JsonSchema for ExecutionUuidKind {
+    fn schema_name() -> String {
+        "ExecutionUuidKind".to_owned()
+    }
+
+    fn json_schema(
+        generator: &mut schemars::r#gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
+        uuid::Uuid::json_schema(generator)
+    }
+}
+
+/// A unique identifier for an execution of an update engine.
+///
+/// Each time an `UpdateEngine` is executed, it is assigned a unique
+/// `ExecutionUuid`.
+pub type ExecutionUuid = TypedUuid<ExecutionUuidKind>;
 
 #[derive_where(Clone, Debug, PartialEq, Eq)]
 pub enum Event<S: StepSpec> {
@@ -96,7 +133,7 @@ pub struct StepEvent<S: StepSpec> {
     pub spec: String,
 
     /// The execution ID.
-    pub execution_id: ExecutionId,
+    pub execution_id: ExecutionUuid,
 
     /// A monotonically increasing index for this `StepEvent`.
     pub event_index: usize,
@@ -207,7 +244,7 @@ impl<S: StepSpec> StepEvent<S> {
 
     /// Returns the execution ID for the leaf event, recursing into nested
     /// events if necessary.
-    pub fn leaf_execution_id(&self) -> ExecutionId {
+    pub fn leaf_execution_id(&self) -> ExecutionUuid {
         match &self.kind {
             StepEventKind::Nested { event, .. } => event.leaf_execution_id(),
             _ => self.execution_id,
@@ -1045,7 +1082,7 @@ pub struct ProgressEvent<S: StepSpec> {
     pub spec: String,
 
     /// The execution ID.
-    pub execution_id: ExecutionId,
+    pub execution_id: ExecutionUuid,
 
     /// Total time elapsed since the start of execution.
     pub total_elapsed: Duration,
@@ -1767,7 +1804,7 @@ pub struct EventReport<S: StepSpec> {
     /// Each report has a root execution ID, which ties together all step and
     /// progress events. This is always filled out if the list of step events is
     /// non-empty.
-    pub root_execution_id: Option<ExecutionId>,
+    pub root_execution_id: Option<ExecutionUuid>,
 
     /// The last event seen.
     ///
@@ -1858,10 +1895,8 @@ mod tests {
         type Error = anyhow::Error;
     }
 
-    fn test_execution_id() -> crate::ExecutionId {
-        crate::ExecutionId(
-            "2cc08a14-5e96-4917-bc70-e98293a3b703".parse().expect("valid UUID"),
-        )
+    fn test_execution_id() -> ExecutionUuid {
+        "2cc08a14-5e96-4917-bc70-e98293a3b703".parse().expect("parsed UUID")
     }
 
     #[test]

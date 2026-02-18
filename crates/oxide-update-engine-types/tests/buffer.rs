@@ -15,13 +15,12 @@ use oxide_update_engine_test_utils::{
     GenerateTestEventsKind, TestSpec, generate_test_events,
 };
 use oxide_update_engine_types::{
-    ExecutionId,
     buffer::{
         EventBuffer, ExecutionStatus, RootEventIndex, StepKey, TerminalKind,
     },
     events::{
-        Event, EventReport, ProgressCounter, ProgressEvent, ProgressEventKind,
-        StepEvent, StepEventKind, StepEventPriority,
+        Event, EventReport, ExecutionUuid, ProgressCounter, ProgressEvent,
+        ProgressEventKind, StepEvent, StepEventKind, StepEventPriority,
     },
     spec::StepSpec,
 };
@@ -137,7 +136,7 @@ const MAX_LOW_PRIORITY: usize = 4;
 
 #[derive(Debug)]
 struct BufferTestContext {
-    root_execution_id: ExecutionId,
+    root_execution_id: ExecutionUuid,
     generated_events: Vec<Event<TestSpec>>,
 
     // Data derived from generated_events.

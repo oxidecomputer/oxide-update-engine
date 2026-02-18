@@ -14,38 +14,8 @@
 //! It has no dependency on the execution engine itself, making it
 //! suitable for consumers that only need to read or display events.
 
-use serde::{Deserialize, Serialize};
-use std::fmt;
-use uuid::Uuid;
-
 pub mod buffer;
 pub mod errors;
 pub mod events;
 mod macros;
 pub mod spec;
-
-/// A unique identifier for an execution of an update engine.
-///
-/// Each time an `UpdateEngine` is executed, it is assigned a unique
-/// `ExecutionId`.
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-    Deserialize,
-    Serialize,
-)]
-#[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
-#[serde(transparent)]
-pub struct ExecutionId(pub Uuid);
-
-impl fmt::Display for ExecutionId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
