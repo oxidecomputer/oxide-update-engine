@@ -432,8 +432,8 @@ impl BufferTestContext {
             } else if this_high_priority.len() == last_high_priority.len() + 1 {
                 // The first N events must match.
                 ensure!(
-                    &this_high_priority[0..last_high_priority.len()]
-                        == &last_high_priority,
+                    this_high_priority[0..last_high_priority.len()]
+                        == last_high_priority,
                     "{description}, at index {i}, \
                      all old high-priority events reported (2)"
                 );
