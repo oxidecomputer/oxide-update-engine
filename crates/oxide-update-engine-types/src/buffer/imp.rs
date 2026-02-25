@@ -17,7 +17,6 @@ use crate::{
     spec::{EngineSpec, NestedSpec},
 };
 use derive_where::derive_where;
-use either::Either;
 use indexmap::IndexMap;
 use petgraph::{prelude::*, visit::Walker};
 use std::{
@@ -1421,15 +1420,31 @@ impl<S: EngineSpec> StepStatus<S> {
     ///
     /// Events are sorted by event index.
     pub fn low_priority(&self) -> impl Iterator<Item = &StepEvent<S>> {
+        // Two-variant iterator to avoid boxing: one arm yields
+        // the stored events, the other yields nothing.
+        enum LowPriority<I> {
+            Some(I),
+            Empty,
+        }
+        impl<I: Iterator> Iterator for LowPriority<I> {
+            type Item = I::Item;
+            fn next(&mut self) -> Option<Self::Item> {
+                match self {
+                    Self::Some(iter) => iter.next(),
+                    Self::Empty => None,
+                }
+            }
+        }
+
         match self {
             Self::Running { low_priority, .. } => {
-                Either::Left(low_priority.iter())
+                LowPriority::Some(low_priority.iter())
             }
             Self::NotStarted
             | Self::Completed { .. }
             | Self::Failed { .. }
             | Self::Aborted { .. }
-            | Self::WillNotBeRun { .. } => Either::Right(std::iter::empty()),
+            | Self::WillNotBeRun { .. } => LowPriority::Empty,
         }
     }
 

@@ -19,9 +19,7 @@ schemars08 = ["dep:schemars", "newtype-uuid/schemars08"]
 
 [dependencies]
 anyhow.workspace = true
-chrono.workspace = true
 derive-where.workspace = true
-either.workspace = true
 indexmap.workspace = true
 indent_write.workspace = true
 petgraph.workspace = true
