@@ -9,7 +9,7 @@ use camino::Utf8PathBuf;
 use camino_tempfile::Utf8TempDir;
 use clap::{Parser, ValueEnum};
 use display::make_displayer;
-use oxide_update_engine_types::{
+use oxide_update_engine::types::{
     buffer::EventBuffer,
     events::{Event, ProgressUnits},
 };

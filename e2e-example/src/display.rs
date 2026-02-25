@@ -15,10 +15,12 @@ use debug_ignore::DebugIgnore;
 use indexmap::{IndexMap, map::Entry};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use owo_colors::OwoColorize;
+use oxide_update_engine::types::{
+    buffer::EventBuffer, events::ProgressCounter,
+};
 use oxide_update_engine_display::{
     GroupDisplay, LineDisplay, LineDisplayStyles,
 };
-use oxide_update_engine_types::{buffer::EventBuffer, events::ProgressCounter};
 use std::{borrow::Cow, time::Duration};
 use tokio::{sync::mpsc, task::JoinHandle};
 
@@ -156,7 +158,7 @@ async fn display_progress_bar(
     Ok(())
 }
 
-pub struct MessageDisplayState {
+struct MessageDisplayState {
     log: slog::Logger,
     mp: MultiProgress,
     pb_main: ProgressBar,

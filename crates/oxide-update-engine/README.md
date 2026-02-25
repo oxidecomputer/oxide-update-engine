@@ -27,7 +27,7 @@ A minimal engine that runs a single update step:
 use oxide_update_engine::{
     StepSuccess, UpdateEngine, channel,
 };
-use oxide_update_engine_types::spec::EngineSpec;
+use oxide_update_engine::types::spec::EngineSpec;
 
 // A EngineSpec defines the domain-specific types that flow
 // through the engine. Use () for metadata you don't need.
@@ -68,7 +68,7 @@ engine.execute().await?;
 
 For more complex engines, including engines that have nested local and
 remote steps, see [the full
-example](https://github.com/oxidecomputer/oxide-update-engine/blob/main/crates/oxide-update-engine-display/examples/basic/main.rs).
+example](https://github.com/oxidecomputer/oxide-update-engine/blob/main/e2e-example/src/main.rs).
 <!-- cargo-sync-rdme ]] -->
 
 ## License

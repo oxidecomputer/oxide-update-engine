@@ -71,7 +71,7 @@
 //!
 //! For more complex engines, including engines that have nested local and
 //! remote steps, see [the full
-//! example](https://github.com/oxidecomputer/oxide-update-engine/blob/main/crates/oxide-update-engine-display/examples/basic/main.rs).
+//! example](https://github.com/oxidecomputer/oxide-update-engine/blob/main/e2e-example/src/main.rs).
 
 mod context;
 mod engine;

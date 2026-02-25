@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use camino::Utf8PathBuf;
-use oxide_update_engine_types::spec::EngineSpec;
+use oxide_update_engine::types::spec::EngineSpec;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 

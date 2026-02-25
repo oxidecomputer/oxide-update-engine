@@ -275,6 +275,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
+name = "e2e-example"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "buf-list",
+ "bytes",
+ "camino",
+ "camino-tempfile",
+ "clap",
+ "debug-ignore",
+ "indexmap",
+ "indicatif",
+ "owo-colors",
+ "oxide-update-engine",
+ "oxide-update-engine-display",
+ "schemars",
+ "serde",
+ "serde_json",
+ "slog",
+ "slog-async",
+ "slog-term",
+ "supports-color",
+ "tokio",
+]
+
+[[package]]
 name = "encode_unicode"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -693,29 +719,14 @@ dependencies = [
 name = "oxide-update-engine-display"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "buf-list",
- "bytes",
- "camino",
- "camino-tempfile",
  "chrono",
- "clap",
  "debug-ignore",
  "derive-where",
- "indexmap",
- "indicatif",
  "libsw",
  "owo-colors",
- "oxide-update-engine",
  "oxide-update-engine-test-utils",
  "oxide-update-engine-types",
- "schemars",
- "serde",
- "serde_json",
  "slog",
- "slog-async",
- "slog-term",
- "supports-color",
  "swrite",
  "tokio",
  "unicode-width",

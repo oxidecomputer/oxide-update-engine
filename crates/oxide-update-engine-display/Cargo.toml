@@ -40,20 +40,5 @@ pre-release-replacements = [
 ]
 
 [dev-dependencies]
-anyhow.workspace = true
-buf-list.workspace = true
-bytes.workspace = true
-camino.workspace = true
-camino-tempfile.workspace = true
-clap.workspace = true
-indicatif.workspace = true
-indexmap.workspace = true
-oxide-update-engine.workspace = true
-schemars.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-slog-async.workspace = true
-slog-term.workspace = true
-supports-color.workspace = true
 oxide-update-engine-test-utils.workspace = true
-tokio = { workspace = true, features = ["io-util", "fs", "macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

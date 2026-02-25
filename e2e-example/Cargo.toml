@@ -1,0 +1,39 @@
+[package]
+name = "e2e-example"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+schemars08 = [
+    "oxide-update-engine/schemars08",
+    "oxide-update-engine-display/schemars08",
+    "schemars",
+]
+
+[dependencies]
+anyhow.workspace = true
+buf-list.workspace = true
+bytes.workspace = true
+camino.workspace = true
+camino-tempfile.workspace = true
+clap.workspace = true
+debug-ignore.workspace = true
+indexmap.workspace = true
+indicatif.workspace = true
+oxide-update-engine.workspace = true
+oxide-update-engine-display.workspace = true
+owo-colors.workspace = true
+schemars = { workspace = true, optional = true }
+serde.workspace = true
+serde_json.workspace = true
+slog.workspace = true
+slog-async.workspace = true
+slog-term.workspace = true
+supports-color.workspace = true
+tokio = { workspace = true, features = ["io-util", "fs", "macros", "rt-multi-thread"] }
