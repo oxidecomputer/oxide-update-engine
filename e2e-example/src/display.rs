@@ -56,8 +56,8 @@ async fn display_line(
     slog::info!(log, "setting up display");
     let mut buffer = EventBuffer::new(8);
     let mut display = LineDisplay::new(std::io::stdout());
-    // For now, always colorize. TODO: figure out whether colorization should be
-    // done based on always/auto/never etc.
+    // Colorize if the terminal supports it. A real application
+    // might add a --color=always/auto/never flag.
     if supports_color::on(supports_color::Stream::Stdout).is_some() {
         display.set_styles(LineDisplayStyles::colorized());
     }
@@ -93,8 +93,8 @@ async fn display_group(
         ],
         std::io::stdout(),
     );
-    // For now, always colorize. TODO: figure out whether colorization should be
-    // done based on always/auto/never etc.
+    // Colorize if the terminal supports it. A real application
+    // might add a --color=always/auto/never flag.
     if supports_color::on(supports_color::Stream::Stdout).is_some() {
         display.set_styles(LineDisplayStyles::colorized());
     }
@@ -306,7 +306,9 @@ impl MessageDisplayState {
                         );
                     }
                     StepEventKind::Nested { .. } => {
-                        // TODO: display nested events.
+                        // Nested events are handled by LineDisplay
+                        // and GroupDisplay; this progress-bar renderer
+                        // doesn't render them.
                     }
                     StepEventKind::Unknown => {}
                 }
@@ -334,7 +336,9 @@ impl MessageDisplayState {
                 node.progress(progress);
             }
             ProgressEventKind::Nested { .. } => {
-                // TODO: display nested events.
+                // Nested events are handled by LineDisplay
+                // and GroupDisplay; this progress-bar renderer
+                // doesn't render them.
             }
             ProgressEventKind::Unknown => {}
         }
