@@ -26,12 +26,12 @@
 //! use oxide_update_engine::{
 //!     StepSuccess, UpdateEngine, channel,
 //! };
-//! use oxide_update_engine_types::spec::StepSpec;
+//! use oxide_update_engine_types::spec::EngineSpec;
 //!
-//! // A StepSpec defines the domain-specific types that flow
+//! // A EngineSpec defines the domain-specific types that flow
 //! // through the engine. Use () for metadata you don't need.
 //! enum MySpec {}
-//! impl StepSpec for MySpec {
+//! impl EngineSpec for MySpec {
 //!     fn spec_name() -> String {
 //!         "example".into()
 //!     }

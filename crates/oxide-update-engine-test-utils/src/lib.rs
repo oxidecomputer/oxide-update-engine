@@ -8,14 +8,14 @@ use oxide_update_engine::{StepContext, StepSuccess, UpdateEngine};
 use oxide_update_engine_types::{
     buffer::EventBuffer,
     events::{Event, ExecutionUuid, ProgressUnits, StepProgress},
-    spec::StepSpec,
+    spec::EngineSpec,
 };
 use tokio::sync::oneshot;
 use tokio_stream::wrappers::ReceiverStream;
 
 pub enum TestSpec {}
 
-impl StepSpec for TestSpec {
+impl EngineSpec for TestSpec {
     fn spec_name() -> String {
         "TestSpec".to_owned()
     }

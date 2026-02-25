@@ -13,7 +13,7 @@ use oxide_update_engine_types::{
         ExecutionUuid, ProgressCounter, ProgressEvent, ProgressEventKind,
         StepEvent, StepEventKind, StepInfo, StepOutcome,
     },
-    spec::StepSpec,
+    spec::EngineSpec,
 };
 use std::{
     collections::HashMap,
@@ -75,7 +75,7 @@ impl LineDisplaySharedContext<'_> {
     ///
     /// Returned lines do not have a trailing newline; adding them is the
     /// caller's responsibility.
-    pub(crate) fn format_event_buffer<S: StepSpec>(
+    pub(crate) fn format_event_buffer<S: EngineSpec>(
         &mut self,
         buffer: &EventBuffer<S>,
         out: &mut LineDisplayOutput,
@@ -115,7 +115,7 @@ impl LineDisplaySharedContext<'_> {
     }
 
     /// Format this step event.
-    fn format_step_event<S: StepSpec>(
+    fn format_step_event<S: EngineSpec>(
         &self,
         buffer: &EventBuffer<S>,
         step_event: &StepEvent<S>,
@@ -130,7 +130,7 @@ impl LineDisplaySharedContext<'_> {
         );
     }
 
-    fn format_step_event_impl<S: StepSpec, S2: StepSpec>(
+    fn format_step_event_impl<S: EngineSpec, S2: EngineSpec>(
         &self,
         buffer: &EventBuffer<S>,
         step_event: &StepEvent<S2>,
@@ -459,7 +459,7 @@ impl LineDisplaySharedContext<'_> {
         }
     }
 
-    fn format_step_running<S: StepSpec>(
+    fn format_step_running<S: EngineSpec>(
         &self,
         line: &mut String,
         ld_step_info: LineDisplayStepInfo<'_, S>,
@@ -514,7 +514,7 @@ impl LineDisplaySharedContext<'_> {
         line
     }
 
-    fn format_progress_event<S: StepSpec, S2: StepSpec>(
+    fn format_progress_event<S: EngineSpec, S2: EngineSpec>(
         &self,
         buffer: &EventBuffer<S>,
         progress_event: &ProgressEvent<S2>,
@@ -529,7 +529,7 @@ impl LineDisplaySharedContext<'_> {
         )
     }
 
-    fn format_progress_event_impl<S: StepSpec, S2: StepSpec>(
+    fn format_progress_event_impl<S: EngineSpec, S2: EngineSpec>(
         &self,
         buffer: &EventBuffer<S>,
         progress_event: &ProgressEvent<S2>,
@@ -739,7 +739,7 @@ impl LineDisplayFormatter {
         line
     }
 
-    fn add_step_info<S: StepSpec>(
+    fn add_step_info<S: EngineSpec>(
         &self,
         line: &mut String,
         ld_step_info: LineDisplayStepInfo<'_, S>,
@@ -768,7 +768,7 @@ impl LineDisplayFormatter {
         );
     }
 
-    pub(crate) fn add_completion_and_step_info<S: StepSpec>(
+    pub(crate) fn add_completion_and_step_info<S: EngineSpec>(
         &self,
         line: &mut String,
         ld_step_info: LineDisplayStepInfo<'_, S>,
@@ -938,14 +938,14 @@ impl LineDisplayOutput {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct LineDisplayStepInfo<'a, S: StepSpec> {
+pub(crate) struct LineDisplayStepInfo<'a, S: EngineSpec> {
     pub(crate) step_info: &'a StepInfo<S>,
     pub(crate) total_steps: usize,
     pub(crate) nest_data: &'a NestData,
 }
 
-impl<'a, S: StepSpec> LineDisplayStepInfo<'a, S> {
-    fn new<S2: StepSpec>(
+impl<'a, S: EngineSpec> LineDisplayStepInfo<'a, S> {
+    fn new<S2: EngineSpec>(
         buffer: &'a EventBuffer<S2>,
         execution_id: ExecutionUuid,
         step_info: &'a StepInfo<S>,

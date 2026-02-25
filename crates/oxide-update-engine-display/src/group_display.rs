@@ -19,7 +19,7 @@ use oxide_update_engine_types::{
     },
     errors::UnknownReportKey,
     events::EventReport,
-    spec::StepSpec,
+    spec::EngineSpec,
 };
 use std::{borrow::Borrow, collections::BTreeMap, fmt, time::Duration};
 use swrite::{SWrite, swrite};
@@ -31,7 +31,7 @@ use unicode_width::UnicodeWidthStr;
 /// `K` is the key type for each element in the group. Its [`fmt::Display`] impl
 /// is called to obtain the prefix, and `Eq + Ord` is used for keys.
 #[derive(Debug)]
-pub struct GroupDisplay<K, W, S: StepSpec> {
+pub struct GroupDisplay<K, W, S: EngineSpec> {
     // We don't need to add any buffering here because we already write data to
     // the writer in a line-buffered fashion (see Self::write_events).
     log: slog::Logger,
@@ -45,7 +45,7 @@ pub struct GroupDisplay<K, W, S: StepSpec> {
     stats: GroupDisplayStats,
 }
 
-impl<K: Eq + Ord, W: std::io::Write, S: StepSpec> GroupDisplay<K, W, S> {
+impl<K: Eq + Ord, W: std::io::Write, S: EngineSpec> GroupDisplay<K, W, S> {
     /// Creates a new `GroupDisplay` with the provided report keys and
     /// prefixes.
     ///
@@ -367,13 +367,13 @@ impl GroupDisplayStats {
 }
 
 #[derive(Debug)]
-struct SingleState<S: StepSpec> {
+struct SingleState<S: EngineSpec> {
     shared: LineDisplayShared,
     kind: SingleStateKind<S>,
     prefix: String,
 }
 
-impl<S: StepSpec> SingleState<S> {
+impl<S: EngineSpec> SingleState<S> {
     fn new(prefix: String, max_width: usize) -> Self {
         // Right-align the prefix to the maximum width.
         let prefix = format!("{:>max_width$}", prefix);
@@ -572,7 +572,7 @@ impl<S: StepSpec> SingleState<S> {
 }
 
 #[derive(Debug)]
-enum SingleStateKind<S: StepSpec> {
+enum SingleStateKind<S: EngineSpec> {
     NotStarted {
         displayed: bool,
     },

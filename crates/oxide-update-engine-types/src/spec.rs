@@ -10,7 +10,7 @@ use std::{fmt, fmt::Write, marker::PhantomData};
 /// A specification for an `UpdateEngine`.
 ///
 /// This defines the set of types required to use an `UpdateEngine`.
-pub trait StepSpec: Send + 'static {
+pub trait EngineSpec: Send + 'static {
     /// The name of this specification, used to identify it in
     /// serialized events.
     fn spec_name() -> String;
@@ -91,8 +91,8 @@ pub trait StepSpec: Send + 'static {
 }
 
 #[cfg(feature = "schemars08")]
-pub trait JsonSchemaStepSpec:
-    StepSpec<
+pub trait JsonSchemaEngineSpec:
+    EngineSpec<
         Component: schemars::JsonSchema,
         StepId: schemars::JsonSchema,
         StepMetadata: schemars::JsonSchema,
@@ -104,9 +104,9 @@ pub trait JsonSchemaStepSpec:
 }
 
 #[cfg(feature = "schemars08")]
-impl<S> JsonSchemaStepSpec for S
+impl<S> JsonSchemaEngineSpec for S
 where
-    S: StepSpec + schemars::JsonSchema,
+    S: EngineSpec + schemars::JsonSchema,
     S::Component: schemars::JsonSchema,
     S::StepId: schemars::JsonSchema,
     S::StepMetadata: schemars::JsonSchema,
@@ -145,7 +145,7 @@ impl<E> schemars::JsonSchema for GenericSpec<E> {
     }
 }
 
-impl<E: AsError> StepSpec for GenericSpec<E> {
+impl<E: AsError> EngineSpec for GenericSpec<E> {
     fn spec_name() -> String {
         "GenericSpec".to_owned()
     }

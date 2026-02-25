@@ -11,7 +11,7 @@ use derive_where::derive_where;
 use owo_colors::Style;
 use oxide_update_engine_types::{
     buffer::{EventBuffer, ExecutionTerminalInfo},
-    spec::StepSpec,
+    spec::EngineSpec,
 };
 use std::time::Duration;
 
@@ -69,7 +69,7 @@ impl<W: std::io::Write> LineDisplay<W> {
     ///
     /// This is a stateful method that will only display events that have not
     /// been displayed before.
-    pub fn write_event_buffer<S: StepSpec>(
+    pub fn write_event_buffer<S: EngineSpec>(
         &mut self,
         buffer: &EventBuffer<S>,
     ) -> std::io::Result<()> {

@@ -9,10 +9,10 @@
 //! over the wire with schema support.
 
 #[cfg(feature = "schemars08")]
-use crate::spec::JsonSchemaStepSpec;
+use crate::spec::JsonSchemaEngineSpec;
 use crate::{
     errors::ConvertGenericError,
-    spec::{AsError, GenericSpec, NestedSpec, StepSpec},
+    spec::{AsError, EngineSpec, GenericSpec, NestedSpec},
 };
 use derive_where::derive_where;
 use newtype_uuid::{TypedUuid, TypedUuidKind, TypedUuidTag};
@@ -58,12 +58,12 @@ impl schemars::JsonSchema for ExecutionUuidKind {
 pub type ExecutionUuid = TypedUuid<ExecutionUuidKind>;
 
 #[derive_where(Clone, Debug, PartialEq, Eq)]
-pub enum Event<S: StepSpec> {
+pub enum Event<S: EngineSpec> {
     Step(StepEvent<S>),
     Progress(ProgressEvent<S>),
 }
 
-impl<S: StepSpec> Event<S> {
+impl<S: EngineSpec> Event<S> {
     /// Converts a generic version into self.
     ///
     /// This version can be used to convert a generic type into a more concrete
@@ -104,12 +104,12 @@ impl<S: StepSpec> Event<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(rename = "StepEventFor{S}", bound = "S: JsonSchemaStepSpec",)
+    schemars(rename = "StepEventFor{S}", bound = "S: JsonSchemaEngineSpec",)
 )]
-pub struct StepEvent<S: StepSpec> {
+pub struct StepEvent<S: EngineSpec> {
     /// The specification that this event belongs to.
     ///
-    /// This is typically the name of the type `S` for which `StepSpec` is
+    /// This is typically the name of the type `S` for which `EngineSpec` is
     /// implemented.
     ///
     /// This can be used along with `Self::from_generic` to identify which
@@ -138,7 +138,7 @@ pub struct StepEvent<S: StepSpec> {
     pub kind: StepEventKind<S>,
 }
 
-impl<S: StepSpec> StepEvent<S> {
+impl<S: EngineSpec> StepEvent<S> {
     /// Returns a progress event associated with this step event, if any.
     ///
     /// Some step events have an implicit progress event of kind
@@ -296,9 +296,12 @@ impl<S: StepSpec> StepEvent<S> {
 #[serde(bound = "", rename_all = "snake_case", tag = "kind")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(rename = "StepEventKindFor{S}", bound = "S: JsonSchemaStepSpec",)
+    schemars(
+        rename = "StepEventKindFor{S}",
+        bound = "S: JsonSchemaEngineSpec",
+    )
 )]
-pub enum StepEventKind<S: StepSpec> {
+pub enum StepEventKind<S: EngineSpec> {
     /// No steps were defined, and the executor exited without doing anything.
     ///
     /// This is a terminal event: it is guaranteed that no more events will be
@@ -478,7 +481,7 @@ pub enum StepEventKind<S: StepSpec> {
     Unknown,
 }
 
-impl<S: StepSpec> StepEventKind<S> {
+impl<S: EngineSpec> StepEventKind<S> {
     /// Returns whether this is a terminal step event.
     ///
     /// Terminal events guarantee that there are no further events coming from
@@ -870,9 +873,9 @@ pub enum StepEventPriority {
 #[serde(bound = "", rename_all = "snake_case", tag = "kind")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(rename = "StepOutcomeFor{S}", bound = "S: JsonSchemaStepSpec",)
+    schemars(rename = "StepOutcomeFor{S}", bound = "S: JsonSchemaEngineSpec",)
 )]
-pub enum StepOutcome<S: StepSpec> {
+pub enum StepOutcome<S: EngineSpec> {
     /// The step completed successfully.
     Success {
         /// An optional message associated with this step.
@@ -901,7 +904,7 @@ pub enum StepOutcome<S: StepSpec> {
     },
 }
 
-impl<S: StepSpec> StepOutcome<S> {
+impl<S: EngineSpec> StepOutcome<S> {
     /// Converts a generic version into self.
     ///
     /// This version can be used to convert a generic type into a more concrete
@@ -1037,12 +1040,15 @@ impl<S: StepSpec> StepOutcome<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(rename = "ProgressEventFor{S}", bound = "S: JsonSchemaStepSpec",)
+    schemars(
+        rename = "ProgressEventFor{S}",
+        bound = "S: JsonSchemaEngineSpec",
+    )
 )]
-pub struct ProgressEvent<S: StepSpec> {
+pub struct ProgressEvent<S: EngineSpec> {
     /// The specification that this event belongs to.
     ///
-    /// This is typically the name of the type `S` for which `StepSpec` is
+    /// This is typically the name of the type `S` for which `EngineSpec` is
     /// implemented.
     ///
     /// This can be used with `Self::from_generic` to deserialize generic
@@ -1060,7 +1066,7 @@ pub struct ProgressEvent<S: StepSpec> {
     pub kind: ProgressEventKind<S>,
 }
 
-impl<S: StepSpec> ProgressEvent<S> {
+impl<S: EngineSpec> ProgressEvent<S> {
     /// Converts a generic version into self.
     ///
     /// This version can be used to convert a generic type into a more concrete
@@ -1105,10 +1111,10 @@ impl<S: StepSpec> ProgressEvent<S> {
     feature = "schemars08",
     schemars(
         rename = "ProgressEventKindFor{S}",
-        bound = "S: JsonSchemaStepSpec",
+        bound = "S: JsonSchemaEngineSpec",
     )
 )]
-pub enum ProgressEventKind<S: StepSpec> {
+pub enum ProgressEventKind<S: EngineSpec> {
     /// The update engine is waiting for a progress message.
     ///
     /// The update engine sends this message immediately after a [`StepEvent`]
@@ -1172,7 +1178,7 @@ pub enum ProgressEventKind<S: StepSpec> {
     Unknown,
 }
 
-impl<S: StepSpec> ProgressEventKind<S> {
+impl<S: EngineSpec> ProgressEventKind<S> {
     /// Returns the progress counter for this event, if available.
     pub fn progress_counter(&self) -> Option<&ProgressCounter> {
         match self {
@@ -1357,9 +1363,9 @@ impl<S: StepSpec> ProgressEventKind<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(rename = "StepInfoFor{S}", bound = "S: JsonSchemaStepSpec",)
+    schemars(rename = "StepInfoFor{S}", bound = "S: JsonSchemaEngineSpec",)
 )]
-pub struct StepInfo<S: StepSpec> {
+pub struct StepInfo<S: EngineSpec> {
     /// An identifier for this step.
     pub id: S::StepId,
 
@@ -1379,7 +1385,7 @@ pub struct StepInfo<S: StepSpec> {
     pub total_component_steps: usize,
 }
 
-impl<S: StepSpec> StepInfo<S> {
+impl<S: EngineSpec> StepInfo<S> {
     /// Returns true if this is the last step in this component.
     pub fn is_last_step_in_component(&self) -> bool {
         self.component_index + 1 == self.total_component_steps
@@ -1437,10 +1443,10 @@ impl<S: StepSpec> StepInfo<S> {
     feature = "schemars08",
     schemars(
         rename = "StepComponentSummaryFor{S}",
-        bound = "S: JsonSchemaStepSpec",
+        bound = "S: JsonSchemaEngineSpec",
     )
 )]
-pub struct StepComponentSummary<S: StepSpec> {
+pub struct StepComponentSummary<S: EngineSpec> {
     /// The component.
     pub component: S::Component,
 
@@ -1448,7 +1454,7 @@ pub struct StepComponentSummary<S: StepSpec> {
     pub total_component_steps: usize,
 }
 
-impl<S: StepSpec> StepComponentSummary<S> {
+impl<S: EngineSpec> StepComponentSummary<S> {
     /// Converts a generic version into self.
     ///
     /// This version can be used to convert a generic type into a more concrete
@@ -1494,10 +1500,10 @@ impl<S: StepSpec> StepComponentSummary<S> {
     feature = "schemars08",
     schemars(
         rename = "StepInfoWithMetadataFor{S}",
-        bound = "S: JsonSchemaStepSpec",
+        bound = "S: JsonSchemaEngineSpec",
     )
 )]
-pub struct StepInfoWithMetadata<S: StepSpec> {
+pub struct StepInfoWithMetadata<S: EngineSpec> {
     /// Information about this step.
     pub info: StepInfo<S>,
 
@@ -1505,7 +1511,7 @@ pub struct StepInfoWithMetadata<S: StepSpec> {
     pub metadata: Option<S::StepMetadata>,
 }
 
-impl<S: StepSpec> StepInfoWithMetadata<S> {
+impl<S: EngineSpec> StepInfoWithMetadata<S> {
     /// Converts a generic version into self.
     ///
     /// This version can be used to convert a generic type into a more concrete
@@ -1632,7 +1638,7 @@ where
 }
 
 #[derive_where(Clone, Debug, Eq, PartialEq)]
-pub enum StepProgress<S: StepSpec> {
+pub enum StepProgress<S: EngineSpec> {
     /// A step has progressed.
     Progress {
         /// Current progress.
@@ -1662,7 +1668,7 @@ pub enum StepProgress<S: StepSpec> {
     },
 }
 
-impl<S: StepSpec> StepProgress<S> {
+impl<S: EngineSpec> StepProgress<S> {
     /// Creates a new progress message with current and total values.
     pub fn with_current_and_total(
         current: u64,
@@ -1725,9 +1731,9 @@ impl<S: StepSpec> StepProgress<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(rename = "EventReportFor{S}", bound = "S: JsonSchemaStepSpec",)
+    schemars(rename = "EventReportFor{S}", bound = "S: JsonSchemaEngineSpec",)
 )]
-pub struct EventReport<S: StepSpec> {
+pub struct EventReport<S: EngineSpec> {
     /// A list of step events.
     ///
     /// Step events include success and failure events.
@@ -1753,7 +1759,7 @@ pub struct EventReport<S: StepSpec> {
     pub last_seen: Option<usize>,
 }
 
-impl<S: StepSpec> EventReport<S> {
+impl<S: EngineSpec> EventReport<S> {
     /// Converts a generic version into self.
     ///
     /// This version can be used to convert a generic type into a more concrete
@@ -1818,11 +1824,11 @@ impl<S: StepSpec> EventReport<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::spec::StepSpec;
+    use crate::spec::EngineSpec;
 
     enum TestSpec {}
 
-    impl StepSpec for TestSpec {
+    impl EngineSpec for TestSpec {
         fn spec_name() -> String {
             "TestSpec".to_owned()
         }

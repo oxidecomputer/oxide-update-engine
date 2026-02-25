@@ -9,7 +9,7 @@ use oxide_update_engine_types::{
     buffer::EventBuffer,
     errors::NestedEngineError,
     events::{Event, EventReport, ExecutionUuid, StepEventKind, StepProgress},
-    spec::{NestedSpec, SerializableError, StepSpec},
+    spec::{EngineSpec, NestedSpec, SerializableError},
 };
 use std::{collections::HashMap, fmt, marker::PhantomData, sync::Mutex};
 use tokio::{
@@ -28,7 +28,7 @@ use tokio::{
 /// more likely that it is dropped at the same time the future
 /// completes.
 #[derive(Debug)]
-pub struct StepContext<S: StepSpec> {
+pub struct StepContext<S: EngineSpec> {
     log: slog::Logger,
     payload_sender: mpsc::Sender<StepContextPayload<S>>,
     token: StepHandleToken<S>,
@@ -38,7 +38,7 @@ pub struct StepContext<S: StepSpec> {
     nested_buffers: Mutex<HashMap<ExecutionUuid, NestedEventBuffer>>,
 }
 
-impl<S: StepSpec> StepContext<S> {
+impl<S: EngineSpec> StepContext<S> {
     pub(crate) fn new(
         log: &slog::Logger,
         payload_sender: mpsc::Sender<StepContextPayload<S>>,
@@ -69,7 +69,7 @@ impl<S: StepSpec> StepContext<S> {
     /// Returns an error if a [`StepEventKind::ExecutionFailed`] event
     /// was seen.
     #[inline]
-    pub async fn send_nested_report<S2: StepSpec>(
+    pub async fn send_nested_report<S2: EngineSpec>(
         &self,
         report: EventReport<S2>,
     ) -> Result<(), NestedEngineError<NestedSpec>> {
@@ -201,7 +201,7 @@ impl<S: StepSpec> StepContext<S> {
     where
         'this: 'a,
         F: FnOnce(&mut UpdateEngine<'a, S2>) -> Result<(), S2::Error> + Send,
-        S2: StepSpec + 'a,
+        S2: EngineSpec + 'a,
     {
         // Previously, this code was of the form:
         //
@@ -299,7 +299,7 @@ impl NestedEventBuffer {
     /// Adds an event report to the buffer, and generates a
     /// corresponding event report that can be used to send data
     /// upstream.
-    fn add_event_report<S: StepSpec>(
+    fn add_event_report<S: EngineSpec>(
         &mut self,
         report: EventReport<S>,
     ) -> EventReport<NestedSpec> {
@@ -314,7 +314,7 @@ impl NestedEventBuffer {
 pub(crate) enum Never {}
 
 #[derive_where(Debug)]
-pub(crate) enum StepContextPayload<S: StepSpec> {
+pub(crate) enum StepContextPayload<S: EngineSpec> {
     Progress {
         now: Instant,
         progress: StepProgress<S>,
@@ -347,11 +347,11 @@ pub(crate) enum StepContextPayload<S: StepSpec> {
 /// it more likely that it is dropped at the same time the future
 /// completes.
 #[derive_where(Debug)]
-pub struct MetadataContext<S: StepSpec> {
+pub struct MetadataContext<S: EngineSpec> {
     token: StepHandleToken<S>,
 }
 
-impl<S: StepSpec> MetadataContext<S> {
+impl<S: EngineSpec> MetadataContext<S> {
     pub(crate) fn new() -> Self {
         Self { token: StepHandleToken::new() }
     }
@@ -369,11 +369,11 @@ impl<S: StepSpec> MetadataContext<S> {
 /// This can be used to retrieve the value of a `StepHandle`. In the
 /// future, it may also be extended to provide more information.
 #[derive_where(Debug)]
-pub struct CompletionContext<S: StepSpec> {
+pub struct CompletionContext<S: EngineSpec> {
     token: StepHandleToken<S>,
 }
 
-impl<S: StepSpec> CompletionContext<S> {
+impl<S: EngineSpec> CompletionContext<S> {
     pub(crate) fn new() -> Self {
         Self { token: StepHandleToken::new() }
     }

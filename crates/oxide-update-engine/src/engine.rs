@@ -17,7 +17,7 @@ use oxide_update_engine_types::{
         StepComponentSummary, StepEvent, StepEventKind, StepInfo,
         StepInfoWithMetadata, StepOutcome, StepProgress,
     },
-    spec::{AsError, NestedSpec, StepSpec},
+    spec::{AsError, EngineSpec, NestedSpec},
 };
 use std::{
     borrow::Cow,
@@ -37,7 +37,7 @@ use tokio::{
 /// [`tokio::sync::mpsc::channel`] that creates a channel of the appropriate
 /// size, and may aid in type inference.
 #[inline]
-pub fn channel<S: StepSpec>()
+pub fn channel<S: EngineSpec>()
 -> (mpsc::Sender<Event<S>>, mpsc::Receiver<Event<S>>) {
     // This is a large enough channel to handle incoming messages without
     // stalling.
@@ -46,7 +46,7 @@ pub fn channel<S: StepSpec>()
 }
 
 #[derive_where(Debug)]
-pub struct UpdateEngine<'a, S: StepSpec> {
+pub struct UpdateEngine<'a, S: EngineSpec> {
     log: slog::Logger,
     execution_id: ExecutionUuid,
     sender: EngineSender<S>,
@@ -65,7 +65,7 @@ pub struct UpdateEngine<'a, S: StepSpec> {
     steps: Mutex<Steps<'a, S>>,
 }
 
-impl<'a, S: StepSpec + 'a> UpdateEngine<'a, S> {
+impl<'a, S: EngineSpec + 'a> UpdateEngine<'a, S> {
     /// Creates a new `UpdateEngine`.
     ///
     /// It is recommended that `sender` be created using the [`channel`]
@@ -77,7 +77,7 @@ impl<'a, S: StepSpec + 'a> UpdateEngine<'a, S> {
 
     // See the comment on `StepContext::with_nested_engine` for why
     // this is necessary.
-    pub(crate) fn new_nested<S2: StepSpec>(
+    pub(crate) fn new_nested<S2: EngineSpec>(
         log: &slog::Logger,
         sender: mpsc::Sender<StepContextPayload<S2>>,
     ) -> Self {
@@ -329,26 +329,26 @@ impl<'a, S: StepSpec + 'a> UpdateEngine<'a, S> {
 ///
 /// You might imagine that we could have `EngineSender` be an enum
 /// with these two variants. But we actually want `NestedSender<S>` to
-/// implement `SenderImpl<S>` for *any* StepSpec, not just `S`, to
-/// allow nested engines to be a different StepSpec than the outer
+/// implement `SenderImpl<S>` for *any* EngineSpec, not just `S`, to
+/// allow nested engines to be a different EngineSpec than the outer
 /// engine.
 ///
 /// In other words, `NestedSender` doesn't represent a single
 /// `mpsc::Sender<StepContextPayload<S>>`, it represents the universe
-/// of all possible StepSpecs S. This is an infinite number of
+/// of all possible EngineSpecs S. This is an infinite number of
 /// variants, and requires a trait object to represent.
 #[derive_where(Clone, Debug)]
-struct EngineSender<S: StepSpec> {
+struct EngineSender<S: EngineSpec> {
     sender: Arc<dyn SenderImpl<S>>,
 }
 
-impl<S: StepSpec> EngineSender<S> {
+impl<S: EngineSpec> EngineSender<S> {
     async fn send(&self, event: Event<S>) -> Result<(), ExecutionError<S>> {
         self.sender.send(event).await
     }
 }
 
-trait SenderImpl<S: StepSpec>: Send + Sync + fmt::Debug {
+trait SenderImpl<S: EngineSpec>: Send + Sync + fmt::Debug {
     fn send(
         &self,
         event: Event<S>,
@@ -356,11 +356,11 @@ trait SenderImpl<S: StepSpec>: Send + Sync + fmt::Debug {
 }
 
 #[derive_where(Debug)]
-struct DefaultSender<S: StepSpec> {
+struct DefaultSender<S: EngineSpec> {
     sender: mpsc::Sender<Event<S>>,
 }
 
-impl<S: StepSpec> SenderImpl<S> for DefaultSender<S> {
+impl<S: EngineSpec> SenderImpl<S> for DefaultSender<S> {
     fn send(
         &self,
         event: Event<S>,
@@ -370,14 +370,14 @@ impl<S: StepSpec> SenderImpl<S> for DefaultSender<S> {
 }
 
 #[derive_where(Debug)]
-struct NestedSender<S: StepSpec> {
+struct NestedSender<S: EngineSpec> {
     sender: mpsc::Sender<StepContextPayload<S>>,
 }
 
 // Note that NestedSender<S> implements SenderImpl<S2> for any S2:
-// StepSpec. That is to allow nested engines to implement arbitrary
-// StepSpecs.
-impl<S: StepSpec, S2: StepSpec> SenderImpl<S2> for NestedSender<S> {
+// EngineSpec. That is to allow nested engines to implement arbitrary
+// EngineSpecs.
+impl<S: EngineSpec, S2: EngineSpec> SenderImpl<S2> for NestedSender<S> {
     fn send(
         &self,
         event: Event<S2>,
@@ -406,14 +406,14 @@ impl<S: StepSpec, S2: StepSpec> SenderImpl<S2> for NestedSender<S> {
 /// execution.
 #[derive(Debug)]
 #[must_use = "ExecutionHandle does nothing unless polled"]
-pub struct ExecutionHandle<'a, S: StepSpec> {
+pub struct ExecutionHandle<'a, S: EngineSpec> {
     engine_fut: DebugIgnore<
         BoxFuture<'a, Result<CompletionContext<S>, ExecutionError<S>>>,
     >,
     abort_handle: AbortHandle,
 }
 
-impl<S: StepSpec> ExecutionHandle<'_, S> {
+impl<S: EngineSpec> ExecutionHandle<'_, S> {
     /// Aborts this engine execution with a message.
     ///
     /// This sends the message immediately, and returns a future that
@@ -442,7 +442,7 @@ impl<S: StepSpec> ExecutionHandle<'_, S> {
     }
 }
 
-impl<S: StepSpec> Future for ExecutionHandle<'_, S> {
+impl<S: EngineSpec> Future for ExecutionHandle<'_, S> {
     type Output = Result<CompletionContext<S>, ExecutionError<S>>;
 
     fn poll(
@@ -502,7 +502,7 @@ impl Future for AbortWaiter {
 }
 
 #[derive_where(Default, Debug)]
-struct Steps<'a, S: StepSpec> {
+struct Steps<'a, S: EngineSpec> {
     steps: Vec<Step<'a, S>>,
 
     // This is a `LinearMap` and not a `HashMap`/`BTreeMap` because we
@@ -519,12 +519,12 @@ struct Steps<'a, S: StepSpec> {
 // lifetime like 'engine.
 
 /// Provides component context against which a step can be registered.
-pub struct ComponentRegistrar<'engine, 'a, S: StepSpec> {
+pub struct ComponentRegistrar<'engine, 'a, S: EngineSpec> {
     steps: &'engine Mutex<Steps<'a, S>>,
     component: S::Component,
 }
 
-impl<'engine, 'a, S: StepSpec> ComponentRegistrar<'engine, 'a, S> {
+impl<'engine, 'a, S: EngineSpec> ComponentRegistrar<'engine, 'a, S> {
     /// Returns the component associated with this registrar.
     #[inline]
     pub fn component(&self) -> &S::Component {
@@ -594,7 +594,7 @@ impl<'engine, 'a, S: StepSpec> ComponentRegistrar<'engine, 'a, S> {
 /// [`ComponentRegistrar::new_step`].
 #[must_use = "call register() to register this step with the engine"]
 #[derive(Debug)]
-pub struct NewStep<'engine, 'a, S: StepSpec, T> {
+pub struct NewStep<'engine, 'a, S: EngineSpec, T> {
     steps: &'engine Mutex<Steps<'a, S>>,
     component: S::Component,
     id: S::StepId,
@@ -604,11 +604,11 @@ pub struct NewStep<'engine, 'a, S: StepSpec, T> {
     metadata_fn: Option<DebugIgnore<StepMetadataFn<'a, S>>>,
 }
 
-impl<'a, S: StepSpec, T> NewStep<'_, 'a, S, T> {
+impl<'a, S: EngineSpec, T> NewStep<'_, 'a, S, T> {
     /// Adds a metadata-generating function to the step.
     ///
     /// This function is expected to produce
-    /// [`S::StepMetadata`](StepSpec::StepMetadata). The metadata
+    /// [`S::StepMetadata`](EngineSpec::StepMetadata). The metadata
     /// function must be infallible, and will often be synchronous
     /// code.
     pub fn with_metadata_fn<F, Fut>(mut self, f: F) -> Self
@@ -650,7 +650,7 @@ impl<'a, S: StepSpec, T> NewStep<'_, 'a, S, T> {
 /// Returned by the callback passed to `register_step`.
 #[derive_where(Debug; T: std::fmt::Debug)]
 #[must_use = "StepResult must be used"]
-pub struct StepResult<T, S: StepSpec> {
+pub struct StepResult<T, S: EngineSpec> {
     /// The output of the step.
     pub output: T,
 
@@ -660,7 +660,7 @@ pub struct StepResult<T, S: StepSpec> {
     pub outcome: StepOutcome<S>,
 }
 
-impl<T, S: StepSpec> StepResult<T, S> {
+impl<T, S: EngineSpec> StepResult<T, S> {
     /// Maps a `StepResult<T, S>` to `StepResult<U, S>` by applying a
     /// function to the contained `output` value, leaving the `outcome`
     /// untouched.
@@ -675,7 +675,7 @@ impl<T, S: StepSpec> StepResult<T, S> {
 /// A success result produced by a step.
 #[derive_where(Debug; T: std::fmt::Debug)]
 #[must_use = "StepSuccess must be used"]
-pub struct StepSuccess<T, S: StepSpec> {
+pub struct StepSuccess<T, S: EngineSpec> {
     /// The output of the step.
     pub output: T,
 
@@ -686,7 +686,7 @@ pub struct StepSuccess<T, S: StepSpec> {
     pub metadata: Option<S::CompletionMetadata>,
 }
 
-impl<T, S: StepSpec> StepSuccess<T, S> {
+impl<T, S: EngineSpec> StepSuccess<T, S> {
     /// Creates a new `StepSuccess`.
     pub fn new(output: T) -> Self {
         Self { output, metadata: None, message: None }
@@ -719,7 +719,7 @@ impl<T, S: StepSpec> StepSuccess<T, S> {
     }
 }
 
-impl<T, S: StepSpec> From<StepSuccess<T, S>>
+impl<T, S: EngineSpec> From<StepSuccess<T, S>>
     for Result<StepResult<T, S>, S::Error>
 {
     fn from(value: StepSuccess<T, S>) -> Self {
@@ -729,7 +729,7 @@ impl<T, S: StepSpec> From<StepSuccess<T, S>>
 
 #[derive_where(Debug; T: std::fmt::Debug)]
 #[must_use = "StepWarning must be used"]
-pub struct StepWarning<T, S: StepSpec> {
+pub struct StepWarning<T, S: EngineSpec> {
     /// The output of the step.
     pub output: T,
 
@@ -740,7 +740,7 @@ pub struct StepWarning<T, S: StepSpec> {
     pub metadata: Option<S::CompletionMetadata>,
 }
 
-impl<T, S: StepSpec> StepWarning<T, S> {
+impl<T, S: EngineSpec> StepWarning<T, S> {
     /// Creates a new `StepWarning`.
     pub fn new(output: T, message: impl Into<Cow<'static, str>>) -> Self {
         Self { output, message: message.into(), metadata: None }
@@ -764,7 +764,7 @@ impl<T, S: StepSpec> StepWarning<T, S> {
     }
 }
 
-impl<T, S: StepSpec> From<StepWarning<T, S>>
+impl<T, S: EngineSpec> From<StepWarning<T, S>>
     for Result<StepResult<T, S>, S::Error>
 {
     fn from(value: StepWarning<T, S>) -> Self {
@@ -774,7 +774,7 @@ impl<T, S: StepSpec> From<StepWarning<T, S>>
 
 #[derive_where(Debug; T: std::fmt::Debug)]
 #[must_use = "StepSkipped must be used"]
-pub struct StepSkipped<T, S: StepSpec> {
+pub struct StepSkipped<T, S: EngineSpec> {
     /// The output of the step.
     pub output: T,
 
@@ -785,7 +785,7 @@ pub struct StepSkipped<T, S: StepSpec> {
     pub metadata: Option<S::SkippedMetadata>,
 }
 
-impl<T, S: StepSpec> StepSkipped<T, S> {
+impl<T, S: EngineSpec> StepSkipped<T, S> {
     /// Creates a new `StepSkipped`.
     pub fn new(output: T, message: impl Into<Cow<'static, str>>) -> Self {
         Self { output, message: message.into(), metadata: None }
@@ -809,7 +809,7 @@ impl<T, S: StepSpec> StepSkipped<T, S> {
     }
 }
 
-impl<T, S: StepSpec> From<StepSkipped<T, S>>
+impl<T, S: EngineSpec> From<StepSkipped<T, S>>
     for Result<StepResult<T, S>, S::Error>
 {
     fn from(value: StepSkipped<T, S>) -> Self {
@@ -827,13 +827,13 @@ impl<T, S: StepSpec> From<StepSkipped<T, S>>
 ///
 /// 1 and 2 are in StepMetadataGen, while 3 is in exec.
 #[derive_where(Debug)]
-struct Step<'a, S: StepSpec> {
+struct Step<'a, S: EngineSpec> {
     metadata_gen: StepMetadataGen<'a, S>,
     exec: StepExec<'a, S>,
 }
 
 #[derive_where(Debug)]
-struct StepMetadataGen<'a, S: StepSpec> {
+struct StepMetadataGen<'a, S: EngineSpec> {
     id: S::StepId,
     component: S::Component,
     component_index: usize,
@@ -841,7 +841,7 @@ struct StepMetadataGen<'a, S: StepSpec> {
     metadata_fn: Option<DebugIgnore<StepMetadataFn<'a, S>>>,
 }
 
-impl<S: StepSpec> StepMetadataGen<'_, S> {
+impl<S: EngineSpec> StepMetadataGen<'_, S> {
     fn to_step_info(
         &self,
         index: usize,
@@ -878,11 +878,11 @@ impl<S: StepSpec> StepMetadataGen<'_, S> {
 }
 
 #[derive_where(Debug)]
-struct StepExec<'a, S: StepSpec> {
+struct StepExec<'a, S: EngineSpec> {
     exec_fn: DebugIgnore<StepExecFn<'a, S>>,
 }
 
-impl<S: StepSpec> StepExec<'_, S> {
+impl<S: EngineSpec> StepExec<'_, S> {
     async fn execute<F: FnMut() -> usize>(
         self,
         log: &slog::Logger,
@@ -987,14 +987,14 @@ impl<S: StepSpec> StepExec<'_, S> {
 }
 
 #[derive_where(Debug)]
-struct ExecutionContext<S: StepSpec, F> {
+struct ExecutionContext<S: EngineSpec, F> {
     execution_id: ExecutionUuid,
     next_event_index: DebugIgnore<F>,
     total_start: Instant,
     sender: EngineSender<S>,
 }
 
-impl<S: StepSpec, F> ExecutionContext<S, F> {
+impl<S: EngineSpec, F> ExecutionContext<S, F> {
     fn new(
         execution_id: ExecutionUuid,
         next_event_index: F,
@@ -1024,7 +1024,7 @@ impl<S: StepSpec, F> ExecutionContext<S, F> {
 }
 
 #[derive_where(Debug)]
-struct StepExecutionContext<S: StepSpec, F> {
+struct StepExecutionContext<S: EngineSpec, F> {
     execution_id: ExecutionUuid,
     next_event_index: DebugIgnore<F>,
     total_start: Instant,
@@ -1035,7 +1035,7 @@ struct StepExecutionContext<S: StepSpec, F> {
 type StepMetadataFn<'a, S> = Box<
     dyn FnOnce(
             MetadataContext<S>,
-        ) -> BoxFuture<'a, <S as StepSpec>::StepMetadata>
+        ) -> BoxFuture<'a, <S as EngineSpec>::StepMetadata>
         + Send
         + 'a,
 >;
@@ -1050,13 +1050,14 @@ type StepMetadataFn<'a, S> = Box<
 type StepExecFn<'a, S> = Box<
     dyn FnOnce(
             StepContext<S>,
-        )
-            -> BoxFuture<'a, Result<StepOutcome<S>, <S as StepSpec>::Error>>
-        + Send
+        ) -> BoxFuture<
+            'a,
+            Result<StepOutcome<S>, <S as EngineSpec>::Error>,
+        > + Send
         + 'a,
 >;
 
-struct StepProgressReporter<S: StepSpec, F> {
+struct StepProgressReporter<S: EngineSpec, F> {
     execution_id: ExecutionUuid,
     next_event_index: F,
     total_start: Instant,
@@ -1067,7 +1068,7 @@ struct StepProgressReporter<S: StepSpec, F> {
     sender: EngineSender<S>,
 }
 
-impl<S: StepSpec, F: FnMut() -> usize> StepProgressReporter<S, F> {
+impl<S: EngineSpec, F: FnMut() -> usize> StepProgressReporter<S, F> {
     fn new(step_exec_cx: StepExecutionContext<S, F>) -> Self {
         let step_start = Instant::now();
         Self {

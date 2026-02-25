@@ -34,9 +34,9 @@ The key design split: `oxide-update-engine-types` has **zero dependency on the e
 
 ## Core architecture
 
-### `StepSpec` trait (types crate, `spec.rs`)
+### `EngineSpec` trait (types crate, `spec.rs`)
 
-Everything is parameterized by `S: StepSpec`, a trait that bundles associated types (Component, StepId, StepMetadata, ProgressMetadata, CompletionMetadata, SkippedMetadata, Error). This acts as a "type family" that fully describes what domain-specific types flow through the engine.
+Everything is parameterized by `S: EngineSpec`, a trait that bundles associated types (Component, StepId, StepMetadata, ProgressMetadata, CompletionMetadata, SkippedMetadata, Error). This acts as a "type family" that fully describes what domain-specific types flow through the engine.
 
 Two built-in instantiations:
 - **`GenericSpec<E>`**: all metadata fields are `serde_json::Value`, used as a lowest-common-denominator type for cross-engine communication. Concrete specs round-trip through `into_generic()`/`from_generic()`.
@@ -55,7 +55,7 @@ Two built-in instantiations:
 
 Internally, execution uses a double-select pattern: an inner select drives the step future and payload receiver, while an outer select handles abort signals. This is intentional; merging them would break the "exit when both done" semantics.
 
-**Sender polymorphism**: `SenderImpl<S>` trait object allows `DefaultSender` (top-level engine) and `NestedSender` (nested engine with a different `StepSpec`) behind a single `Arc<dyn SenderImpl<S>>`.
+**Sender polymorphism**: `SenderImpl<S>` trait object allows `DefaultSender` (top-level engine) and `NestedSender` (nested engine with a different `EngineSpec`) behind a single `Arc<dyn SenderImpl<S>>`.
 
 ### Step handles and context (engine crate, `context.rs`)
 
@@ -78,7 +78,7 @@ Converts push-based events into pull-based `EventReport`s. Uses a `petgraph::DiG
 - **`derive_where`** for conditional derives that avoid requiring bounds on `S` itself.
 - **`newtype-uuid`** via `TypedUuid<ExecutionUuidKind>` for `ExecutionUuid`.
 - **Backpressure** via oneshot sync channels in `StepContextPayload` variants.
-- **`define_update_engine!` macro** generates type aliases for all generic event types parameterized to a specific `StepSpec`.
+- **`define_update_engine!` macro** generates type aliases for all generic event types parameterized to a specific `EngineSpec`.
 
 ## Style notes
 

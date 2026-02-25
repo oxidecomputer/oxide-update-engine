@@ -7,14 +7,14 @@
 use derive_where::derive_where;
 use oxide_update_engine_types::{
     events::Event,
-    spec::{AsError, StepSpec},
+    spec::{AsError, EngineSpec},
 };
 use std::{borrow::Cow, error, fmt};
 use tokio::sync::mpsc;
 
 /// An error that occurs while the engine is being executed.
 #[derive_where(Debug)]
-pub enum ExecutionError<S: StepSpec> {
+pub enum ExecutionError<S: EngineSpec> {
     StepFailed {
         component: S::Component,
         id: S::StepId,
@@ -30,7 +30,7 @@ pub enum ExecutionError<S: StepSpec> {
     EventSendError(mpsc::error::SendError<Event<S>>),
 }
 
-impl<S: StepSpec> fmt::Display for ExecutionError<S> {
+impl<S: EngineSpec> fmt::Display for ExecutionError<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::StepFailed { description, .. } => {
@@ -50,7 +50,7 @@ impl<S: StepSpec> fmt::Display for ExecutionError<S> {
     }
 }
 
-impl<S: StepSpec> error::Error for ExecutionError<S> {
+impl<S: EngineSpec> error::Error for ExecutionError<S> {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             ExecutionError::StepFailed { error, .. } => Some(error.as_error()),
@@ -62,7 +62,9 @@ impl<S: StepSpec> error::Error for ExecutionError<S> {
     }
 }
 
-impl<S: StepSpec> From<mpsc::error::SendError<Event<S>>> for ExecutionError<S> {
+impl<S: EngineSpec> From<mpsc::error::SendError<Event<S>>>
+    for ExecutionError<S>
+{
     fn from(value: mpsc::error::SendError<Event<S>>) -> Self {
         Self::EventSendError(value)
     }

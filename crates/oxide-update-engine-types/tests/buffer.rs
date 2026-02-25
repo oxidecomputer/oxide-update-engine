@@ -22,7 +22,7 @@ use oxide_update_engine_types::{
         Event, EventReport, ExecutionUuid, ProgressCounter, ProgressEvent,
         ProgressEventKind, StepEvent, StepEventKind, StepEventPriority,
     },
-    spec::StepSpec,
+    spec::EngineSpec,
 };
 use serde::{Deserialize, de::IntoDeserializer};
 use std::collections::HashSet;
@@ -445,7 +445,7 @@ impl BufferTestContext {
         Ok(())
     }
 
-    fn assert_general_properties<S: StepSpec>(
+    fn assert_general_properties<S: EngineSpec>(
         &self,
         buffer: &EventBuffer<TestSpec>,
         report: &EventReport<S>,
@@ -569,7 +569,7 @@ impl BufferTestContext {
     }
 }
 
-fn ensure_buffers_similar<S: StepSpec>(
+fn ensure_buffers_similar<S: EngineSpec>(
     buf1: &EventBuffer<S>,
     buf2: &EventBuffer<S>,
 ) -> anyhow::Result<()> {
@@ -678,13 +678,13 @@ fn check_last_root_event_index(
 
 /// Returns the step keys that this step event would cause updates against,
 /// in order from root to leaf.
-fn step_keys<S: StepSpec>(event: &StepEvent<S>) -> IndexSet<StepKey> {
+fn step_keys<S: EngineSpec>(event: &StepEvent<S>) -> IndexSet<StepKey> {
     let mut out = IndexSet::new();
     step_keys_impl(event, &mut out);
     out
 }
 
-fn step_keys_impl<S: StepSpec>(
+fn step_keys_impl<S: EngineSpec>(
     event: &StepEvent<S>,
     out: &mut IndexSet<StepKey>,
 ) {
@@ -727,7 +727,7 @@ enum WithDeltas {
     Both,
 }
 
-fn progress_event_key<S: StepSpec>(event: &ProgressEvent<S>) -> StepKey {
+fn progress_event_key<S: EngineSpec>(event: &ProgressEvent<S>) -> StepKey {
     match &event.kind {
         ProgressEventKind::WaitingForProgress { step, .. }
         | ProgressEventKind::Progress { step, .. } => {

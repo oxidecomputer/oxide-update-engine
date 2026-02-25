@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use camino::Utf8PathBuf;
-use oxide_update_engine_types::spec::StepSpec;
+use oxide_update_engine_types::spec::EngineSpec;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -30,7 +30,7 @@ pub(crate) type StepHandle<T, S = ExampleSpec> =
 #[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 pub(crate) enum ExampleSpec {}
 
-impl StepSpec for ExampleSpec {
+impl EngineSpec for ExampleSpec {
     fn spec_name() -> String {
         "ExampleSpec".to_owned()
     }
@@ -129,7 +129,7 @@ pub(crate) enum ExampleCompletionMetadata {
 #[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 pub(crate) enum ExampleWriteSpec {}
 
-impl StepSpec for ExampleWriteSpec {
+impl EngineSpec for ExampleWriteSpec {
     fn spec_name() -> String {
         "ExampleWriteSpec".to_owned()
     }

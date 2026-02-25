@@ -5,7 +5,7 @@
 use super::{EventBuffer, StepKey};
 use crate::{
     events::StepOutcome,
-    spec::{NestedSpec, StepSpec},
+    spec::{EngineSpec, NestedSpec},
 };
 use std::{fmt, sync::Arc, time::Duration};
 
@@ -147,7 +147,7 @@ impl AbortReason {
     /// Returns a displayer for the message.
     ///
     /// The buffer is used to resolve step keys to step names.
-    pub fn message_display<'a, S: StepSpec>(
+    pub fn message_display<'a, S: EngineSpec>(
         &'a self,
         buffer: &'a EventBuffer<S>,
     ) -> AbortMessageDisplay<'a, S> {
@@ -208,19 +208,19 @@ pub struct AbortInfo {
 /// Displays the message for an execution abort.
 ///
 /// Returned by [`AbortReason::message_display`].
-pub struct AbortMessageDisplay<'a, S: StepSpec> {
+pub struct AbortMessageDisplay<'a, S: EngineSpec> {
     reason: &'a AbortReason,
     buffer: &'a EventBuffer<S>,
 }
 
-impl<'a, S: StepSpec> AbortMessageDisplay<'a, S> {
+impl<'a, S: EngineSpec> AbortMessageDisplay<'a, S> {
     /// Create a new `AbortMessageDisplay`.
     pub fn new(reason: &'a AbortReason, buffer: &'a EventBuffer<S>) -> Self {
         Self { reason, buffer }
     }
 }
 
-impl<S: StepSpec> fmt::Display for AbortMessageDisplay<'_, S> {
+impl<S: EngineSpec> fmt::Display for AbortMessageDisplay<'_, S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.reason {
             AbortReason::StepAborted(info) => {

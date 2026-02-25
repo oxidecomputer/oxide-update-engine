@@ -14,7 +14,7 @@ use crate::{
         Event, EventReport, ExecutionUuid, ProgressEvent, ProgressEventKind,
         StepEvent, StepEventKind, StepEventPriority, StepInfo,
     },
-    spec::{NestedSpec, StepSpec},
+    spec::{EngineSpec, NestedSpec},
 };
 use derive_where::derive_where;
 use either::Either;
@@ -58,12 +58,12 @@ use std::{
 /// These cases can be handled on a best-effort basis in the future at some cost
 /// to complexity, if required.
 #[derive_where(Clone, Debug)]
-pub struct EventBuffer<S: StepSpec> {
+pub struct EventBuffer<S: EngineSpec> {
     event_store: EventStore<S>,
     max_low_priority: usize,
 }
 
-impl<S: StepSpec> EventBuffer<S> {
+impl<S: EngineSpec> EventBuffer<S> {
     /// Creates a new event buffer.
     ///
     /// `max_low_priority` determines the maximum number of low-priority events
@@ -270,7 +270,7 @@ impl<S: StepSpec> EventBuffer<S> {
     }
 }
 
-impl<S: StepSpec> Default for EventBuffer<S> {
+impl<S: EngineSpec> Default for EventBuffer<S> {
     fn default() -> Self {
         Self {
             event_store: Default::default(),
@@ -280,7 +280,7 @@ impl<S: StepSpec> Default for EventBuffer<S> {
 }
 
 #[derive_where(Clone, Debug, Default)]
-struct EventStore<S: StepSpec> {
+struct EventStore<S: EngineSpec> {
     // A tree which has the general structure:
     //
     // root execution id ───> root step 0
@@ -303,7 +303,7 @@ struct EventStore<S: StepSpec> {
     execution_map: HashMap<ExecutionUuid, EventBufferExecutionData>,
 }
 
-impl<S: StepSpec> EventStore<S> {
+impl<S: EngineSpec> EventStore<S> {
     /// Returns a DFS of event map values.
     fn event_map_value_dfs(
         &self,
@@ -450,7 +450,7 @@ impl<S: StepSpec> EventStore<S> {
     /// Recurses down the structure of a step event, adding nodes to the event
     /// tree as required. Returns the event key for the next event, if one is
     /// available.
-    fn recurse_for_step_event<S2: StepSpec>(
+    fn recurse_for_step_event<S2: EngineSpec>(
         &mut self,
         event: &StepEvent<S2>,
         nest_level: usize,
@@ -659,7 +659,7 @@ impl<S: StepSpec> EventStore<S> {
         RecurseActions { new_execution, step_key, progress_key }
     }
 
-    fn step_key_for_progress_event<S2: StepSpec>(
+    fn step_key_for_progress_event<S2: EngineSpec>(
         event: &ProgressEvent<S2>,
     ) -> Option<StepKey> {
         match &event.kind {
@@ -951,11 +951,11 @@ struct NewExecutionAction {
 ///
 /// Returned by [`EventBuffer::steps`].
 #[derive_where(Clone, Debug)]
-pub struct EventBufferSteps<'buf, S: StepSpec> {
+pub struct EventBufferSteps<'buf, S: EngineSpec> {
     steps: Vec<(StepKey, &'buf EventBufferStepData<S>)>,
 }
 
-impl<'buf, S: StepSpec> EventBufferSteps<'buf, S> {
+impl<'buf, S: EngineSpec> EventBufferSteps<'buf, S> {
     fn new(event_store: &'buf EventStore<S>) -> Self {
         let mut steps: Vec<_> = event_store.event_map_value_dfs().collect();
         steps.sort_unstable_by_key(|(_, value)| value.sort_key());
@@ -1023,7 +1023,7 @@ impl EventBufferExecutionData {
 
 /// Step-related data for a particular key.
 #[derive_where(Clone, Debug)]
-pub struct EventBufferStepData<S: StepSpec> {
+pub struct EventBufferStepData<S: EngineSpec> {
     step_info: StepInfo<NestedSpec>,
 
     sort_key: StepSortKey,
@@ -1038,7 +1038,7 @@ pub struct EventBufferStepData<S: StepSpec> {
     last_root_event_index: RootEventIndex,
 }
 
-impl<S: StepSpec> EventBufferStepData<S> {
+impl<S: EngineSpec> EventBufferStepData<S> {
     fn new(
         step_info: StepInfo<NestedSpec>,
         sort_key: StepSortKey,
@@ -1325,7 +1325,7 @@ impl<S: StepSpec> EventBufferStepData<S> {
 
 /// The step status as last seen by events.
 #[derive_where(Clone, Debug)]
-pub enum StepStatus<S: StepSpec> {
+pub enum StepStatus<S: EngineSpec> {
     NotStarted,
 
     /// The step is currently running.
@@ -1363,7 +1363,7 @@ pub enum StepStatus<S: StepSpec> {
     },
 }
 
-impl<S: StepSpec> StepStatus<S> {
+impl<S: EngineSpec> StepStatus<S> {
     /// Returns true if this step is currently running.
     pub fn is_running(&self) -> bool {
         matches!(self, Self::Running { .. })
