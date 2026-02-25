@@ -4,11 +4,13 @@
 
 use anyhow::bail;
 use futures::StreamExt;
-use oxide_update_engine::{StepContext, StepSuccess, UpdateEngine};
-use oxide_update_engine_types::{
-    buffer::EventBuffer,
-    events::{Event, ExecutionUuid, ProgressUnits, StepProgress},
-    spec::EngineSpec,
+use oxide_update_engine::{
+    StepContext, StepSuccess, UpdateEngine,
+    types::{
+        buffer::EventBuffer,
+        events::{Event, ExecutionUuid, ProgressUnits, StepProgress},
+        spec::EngineSpec,
+    },
 };
 use tokio::sync::oneshot;
 use tokio_stream::wrappers::ReceiverStream;

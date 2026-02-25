@@ -78,7 +78,8 @@ Converts push-based events into pull-based `EventReport`s. Uses a `petgraph::DiG
 - **`derive_where`** for conditional derives that avoid requiring bounds on `S` itself.
 - **`newtype-uuid`** via `TypedUuid<ExecutionUuidKind>` for `ExecutionUuid`.
 - **Backpressure** via oneshot sync channels in `StepContextPayload` variants.
-- **`define_update_engine!` macro** generates type aliases for all generic event types parameterized to a specific `EngineSpec`.
+- **`define_update_engine_types!` macro** (types crate) generates type aliases for event/buffer types parameterized to a specific `EngineSpec`.
+- **`define_update_engine!` macro** (engine crate) generates type aliases for engine-crate execution types (`UpdateEngine`, `StepContext`, `StepResult`, etc.) parameterized to a specific `EngineSpec`.
 
 ## Style notes
 

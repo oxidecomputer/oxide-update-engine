@@ -728,7 +728,6 @@ dependencies = [
  "anyhow",
  "futures",
  "oxide-update-engine",
- "oxide-update-engine-types",
  "serde_json",
  "slog",
  "tokio",

@@ -26,7 +26,7 @@
 //! use oxide_update_engine::{
 //!     StepSuccess, UpdateEngine, channel,
 //! };
-//! use oxide_update_engine_types::spec::EngineSpec;
+//! use oxide_update_engine::types::spec::EngineSpec;
 //!
 //! // A EngineSpec defines the domain-specific types that flow
 //! // through the engine. Use () for metadata you don't need.
@@ -76,6 +76,7 @@
 mod context;
 mod engine;
 mod errors;
+mod macros;
 
 pub(crate) use context::StepContextPayload;
 pub use context::{
@@ -87,3 +88,4 @@ pub use engine::{
     StepResult, StepSkipped, StepSuccess, StepWarning, UpdateEngine, channel,
 };
 pub use errors::ExecutionError;
+pub use oxide_update_engine_types as types;

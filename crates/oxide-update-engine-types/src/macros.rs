@@ -2,12 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-/// Defines type aliases for a particular step specification.
+/// Defines type aliases for types-crate types parameterized by a
+/// particular [`EngineSpec`](crate::spec::EngineSpec).
 ///
 /// This macro defines a number of type aliases. For example:
 ///
 /// ```ignore
-/// oxide_update_engine_types::define_update_engine!(pub(crate) MySpec);
+/// oxide_update_engine_types::define_update_engine_types!(pub(crate) MySpec);
 /// ```
 ///
 /// defines a number of type aliases, each of which are of the form:
@@ -23,8 +24,13 @@
 /// These aliases make it easy to use a type without having to repeat
 /// the name of the specification over and over, while still providing
 /// a type parameter as an escape hatch if required.
+///
+/// For consumers that also depend on the engine crate, a companion
+/// macro
+/// [`oxide_update_engine::define_update_engine!`](https://docs.rs/oxide-update-engine)
+/// generates aliases for engine-crate types.
 #[macro_export]
-macro_rules! define_update_engine {
+macro_rules! define_update_engine_types {
     ($v:vis $spec_type:ty) => {
         $v type Event<S = $spec_type> =
             $crate::events::Event<S>;

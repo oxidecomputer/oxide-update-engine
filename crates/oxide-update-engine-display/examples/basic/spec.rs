@@ -7,23 +7,10 @@ use oxide_update_engine_types::spec::EngineSpec;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-oxide_update_engine_types::define_update_engine!(pub(crate) ExampleSpec);
-
-// Engine-crate type aliases with ExampleSpec as the default.
-pub(crate) type UpdateEngine<'a, S = ExampleSpec> =
-    oxide_update_engine::UpdateEngine<'a, S>;
-pub(crate) type ComponentRegistrar<'engine, 'a, S = ExampleSpec> =
-    oxide_update_engine::ComponentRegistrar<'engine, 'a, S>;
-pub(crate) type StepContext<S = ExampleSpec> =
-    oxide_update_engine::StepContext<S>;
-pub(crate) type StepSuccess<T, S = ExampleSpec> =
-    oxide_update_engine::StepSuccess<T, S>;
-pub(crate) type StepWarning<T, S = ExampleSpec> =
-    oxide_update_engine::StepWarning<T, S>;
-pub(crate) type StepSkipped<T, S = ExampleSpec> =
-    oxide_update_engine::StepSkipped<T, S>;
-pub(crate) type StepHandle<T, S = ExampleSpec> =
-    oxide_update_engine::StepHandle<T, S>;
+oxide_update_engine::types::define_update_engine_types!(
+    pub(crate) ExampleSpec
+);
+oxide_update_engine::define_update_engine!(pub(crate) ExampleSpec);
 
 /// Create a type to hang the engine specification off of. This is an empty
 /// enum (no possible values) because we never construct the type.

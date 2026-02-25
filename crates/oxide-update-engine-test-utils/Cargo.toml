@@ -13,7 +13,6 @@ workspace = true
 anyhow.workspace = true
 futures.workspace = true
 oxide-update-engine.workspace = true
-oxide-update-engine-types.workspace = true
 serde_json.workspace = true
 slog.workspace = true
 tokio.workspace = true
