@@ -16,8 +16,7 @@ use crate::{
 };
 use derive_where::derive_where;
 use newtype_uuid::{TypedUuid, TypedUuidKind, TypedUuidTag};
-use serde::{Deserialize, Serialize};
-use serde_with::rust::deserialize_ignore_any;
+use serde::{Deserialize, Deserializer, Serialize, de::IgnoredAny};
 use std::{borrow::Cow, fmt, time::Duration};
 
 /// Marker type for [`ExecutionUuid`].
@@ -479,6 +478,12 @@ pub enum StepEventKind<S: EngineSpec> {
     /// Future variants that might be unknown.
     #[serde(other, deserialize_with = "deserialize_ignore_any")]
     Unknown,
+}
+
+fn deserialize_ignore_any<'de, D: Deserializer<'de>, T: Default>(
+    deserializer: D,
+) -> Result<T, D::Error> {
+    IgnoredAny::deserialize(deserializer).map(|_| T::default())
 }
 
 impl<S: EngineSpec> StepEventKind<S> {
