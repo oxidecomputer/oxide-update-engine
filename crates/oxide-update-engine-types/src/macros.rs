@@ -54,5 +54,7 @@ macro_rules! define_update_engine_types {
             $crate::events::StepOutcome<S>;
         $v type EventReport<S = $spec_type> =
             $crate::events::EventReport<S>;
+        $v type EventBuffer<S = $spec_type> =
+            $crate::buffer::EventBuffer<S>;
     };
 }
