@@ -8,6 +8,8 @@
 //! they also implement `JsonSchema` so that they can be transmitted
 //! over the wire with schema support.
 
+#[cfg(feature = "schemars08")]
+use crate::spec::JsonSchemaStepSpec;
 use crate::{
     errors::ConvertGenericError,
     spec::{AsError, GenericSpec, NestedSpec, StepSpec},
@@ -102,17 +104,7 @@ impl<S: StepSpec> Event<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(
-        rename = "StepEventFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::StepMetadata: schemars::JsonSchema, \
-            S::ProgressMetadata: schemars::JsonSchema, \
-            S::CompletionMetadata: schemars::JsonSchema, \
-            S::SkippedMetadata: schemars::JsonSchema",
-    )
+    schemars(rename = "StepEventFor{S}", bound = "S: JsonSchemaStepSpec",)
 )]
 pub struct StepEvent<S: StepSpec> {
     /// The specification that this event belongs to.
@@ -304,17 +296,7 @@ impl<S: StepSpec> StepEvent<S> {
 #[serde(bound = "", rename_all = "snake_case", tag = "kind")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(
-        rename = "StepEventKindFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::StepMetadata: schemars::JsonSchema, \
-            S::ProgressMetadata: schemars::JsonSchema, \
-            S::CompletionMetadata: schemars::JsonSchema, \
-            S::SkippedMetadata: schemars::JsonSchema",
-    )
+    schemars(rename = "StepEventKindFor{S}", bound = "S: JsonSchemaStepSpec",)
 )]
 pub enum StepEventKind<S: StepSpec> {
     /// No steps were defined, and the executor exited without doing anything.
@@ -888,13 +870,7 @@ pub enum StepEventPriority {
 #[serde(bound = "", rename_all = "snake_case", tag = "kind")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(
-        rename = "StepOutcomeFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::CompletionMetadata: schemars::JsonSchema, \
-            S::SkippedMetadata: schemars::JsonSchema",
-    )
+    schemars(rename = "StepOutcomeFor{S}", bound = "S: JsonSchemaStepSpec",)
 )]
 pub enum StepOutcome<S: StepSpec> {
     /// The step completed successfully.
@@ -1061,15 +1037,7 @@ impl<S: StepSpec> StepOutcome<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(
-        rename = "ProgressEventFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::StepMetadata: schemars::JsonSchema, \
-            S::ProgressMetadata: schemars::JsonSchema",
-    )
+    schemars(rename = "ProgressEventFor{S}", bound = "S: JsonSchemaStepSpec",)
 )]
 pub struct ProgressEvent<S: StepSpec> {
     /// The specification that this event belongs to.
@@ -1137,12 +1105,7 @@ impl<S: StepSpec> ProgressEvent<S> {
     feature = "schemars08",
     schemars(
         rename = "ProgressEventKindFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::StepMetadata: schemars::JsonSchema, \
-            S::ProgressMetadata: schemars::JsonSchema",
+        bound = "S: JsonSchemaStepSpec",
     )
 )]
 pub enum ProgressEventKind<S: StepSpec> {
@@ -1394,13 +1357,7 @@ impl<S: StepSpec> ProgressEventKind<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(
-        rename = "StepInfoFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema",
-    )
+    schemars(rename = "StepInfoFor{S}", bound = "S: JsonSchemaStepSpec",)
 )]
 pub struct StepInfo<S: StepSpec> {
     /// An identifier for this step.
@@ -1480,9 +1437,7 @@ impl<S: StepSpec> StepInfo<S> {
     feature = "schemars08",
     schemars(
         rename = "StepComponentSummaryFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema",
+        bound = "S: JsonSchemaStepSpec",
     )
 )]
 pub struct StepComponentSummary<S: StepSpec> {
@@ -1539,11 +1494,7 @@ impl<S: StepSpec> StepComponentSummary<S> {
     feature = "schemars08",
     schemars(
         rename = "StepInfoWithMetadataFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema, \
-            S::StepMetadata: schemars::JsonSchema",
+        bound = "S: JsonSchemaStepSpec",
     )
 )]
 pub struct StepInfoWithMetadata<S: StepSpec> {
@@ -1774,17 +1725,7 @@ impl<S: StepSpec> StepProgress<S> {
 #[serde(bound = "", rename_all = "snake_case")]
 #[cfg_attr(
     feature = "schemars08",
-    schemars(
-        rename = "EventReportFor{S}",
-        bound = "\
-            S: schemars::JsonSchema, \
-            S::Component: schemars::JsonSchema, \
-            S::StepId: schemars::JsonSchema, \
-            S::StepMetadata: schemars::JsonSchema, \
-            S::ProgressMetadata: schemars::JsonSchema, \
-            S::CompletionMetadata: schemars::JsonSchema, \
-            S::SkippedMetadata: schemars::JsonSchema",
-    )
+    schemars(rename = "EventReportFor{S}", bound = "S: JsonSchemaStepSpec",)
 )]
 pub struct EventReport<S: StepSpec> {
     /// A list of step events.

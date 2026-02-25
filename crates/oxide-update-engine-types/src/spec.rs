@@ -90,6 +90,32 @@ pub trait StepSpec: Send + 'static {
     type Error: AsError + fmt::Debug + Send + Sync;
 }
 
+#[cfg(feature = "schemars08")]
+pub trait JsonSchemaStepSpec:
+    StepSpec<
+        Component: schemars::JsonSchema,
+        StepId: schemars::JsonSchema,
+        StepMetadata: schemars::JsonSchema,
+        ProgressMetadata: schemars::JsonSchema,
+        CompletionMetadata: schemars::JsonSchema,
+        SkippedMetadata: schemars::JsonSchema,
+    > + schemars::JsonSchema
+{
+}
+
+#[cfg(feature = "schemars08")]
+impl<S> JsonSchemaStepSpec for S
+where
+    S: StepSpec + schemars::JsonSchema,
+    S::Component: schemars::JsonSchema,
+    S::StepId: schemars::JsonSchema,
+    S::StepMetadata: schemars::JsonSchema,
+    S::ProgressMetadata: schemars::JsonSchema,
+    S::CompletionMetadata: schemars::JsonSchema,
+    S::SkippedMetadata: schemars::JsonSchema,
+{
+}
+
 /// Represents a fully generic step specification, as can be serialized
 /// over JSON.
 ///
