@@ -1817,8 +1817,15 @@ impl schemars::JsonSchema for ProgressUnits {
         // Delegate to String's schema and add x-rust-type.
         let mut schema = match generator.subschema_for::<String>() {
             schemars::schema::Schema::Object(obj) => obj,
-            // String always produces an Object schema.
+            // String always produces an Object schema with
+            // schemars 0.8. If this changes, we need to handle
+            // it explicitly.
             other => {
+                debug_assert!(
+                    false,
+                    "expected String to produce an Object \
+                     schema, got: {other:?}",
+                );
                 return other;
             }
         };
@@ -2459,7 +2466,7 @@ mod tests {
             assert_rust_type_ext(
                 xrt,
                 "oxide-update-engine-types",
-                "0.1.0",
+                env!("CARGO_PKG_VERSION"),
                 "oxide_update_engine_types::events\
                  ::ExecutionUuidKind",
             );
@@ -2477,7 +2484,7 @@ mod tests {
             assert_rust_type_ext(
                 xrt,
                 "oxide-update-engine-types",
-                "0.1.0",
+                env!("CARGO_PKG_VERSION"),
                 "oxide_update_engine_types::events\
                  ::ExecutionUuid",
             );
@@ -2596,7 +2603,7 @@ mod tests {
             assert_rust_type_ext(
                 x_rust_type,
                 "oxide-update-engine-types",
-                "0.1.0",
+                env!("CARGO_PKG_VERSION"),
                 expected_outer_path,
             );
 

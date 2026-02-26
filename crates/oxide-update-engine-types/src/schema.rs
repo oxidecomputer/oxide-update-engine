@@ -35,17 +35,17 @@ pub struct RustTypeInfo {
 }
 
 /// Crate name used in `x-rust-type` for types in this crate.
-pub const CRATE_NAME: &str = "oxide-update-engine-types";
+pub(crate) const CRATE_NAME: &str = "oxide-update-engine-types";
 
 /// Version requirement used in `x-rust-type` for types in this
 /// crate.
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub(crate) const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Module path for `events` types in this crate.
-pub const EVENTS_MODULE: &str = "oxide_update_engine_types::events";
+pub(crate) const EVENTS_MODULE: &str = "oxide_update_engine_types::events";
 
 /// Full path to `GenericSpec` in this crate.
-pub const GENERIC_SPEC_PATH: &str =
+pub(crate) const GENERIC_SPEC_PATH: &str =
     "oxide_update_engine_types::spec::GenericSpec";
 
 /// Attaches a description to a schema, mirroring what the schemars
@@ -149,10 +149,10 @@ pub(crate) fn rust_type_for_generic(
 
 // NOTE: We only add `x-rust-type` to the outermost types such as `EventReport`.
 // Ideally, `StepEventKind` and other inner types below would also carry
-// `x-rust-type` in their schemas. However, schemars does not provide a way to
-// intercept or transform a derived schema, so adding `x-rust-type` requires a
-// fully manual `JsonSchema` impl. Manual impls are quite fragile, and changes
-// can silently break the schema.
+// `x-rust-type` in their schemas. However, schemars 0.8 does not provide a way
+// to intercept or transform a derived schema, so adding `x-rust-type` requires
+// a fully manual `JsonSchema` impl. Manual impls are quite fragile, and changes
+// to the shape of the type can silently break the schema.
 //
 // In practice, this is acceptable because these inner types are always accessed
 // through the top-level types which *do* carry `x-rust-type`, so typify

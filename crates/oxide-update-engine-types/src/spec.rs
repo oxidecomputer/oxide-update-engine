@@ -101,6 +101,18 @@ pub trait EngineSpec: Send + 'static {
     }
 }
 
+/// A trait that requires and provides JSON Schema information for an
+/// [`EngineSpec`].
+///
+/// This trait has a blanket implementation. To implement this trait,
+/// implement [`JsonSchema`](schemars::JsonSchema) for:
+///
+/// * the `EngineSpec` type itself
+/// * all associated types other than the error type
+///
+/// It is also recommended that you add a
+/// [`rust_type_info`](EngineSpec::rust_type_info) method to your `EngineSpec`
+/// implementation to enable automatic replacement in typify and progenitor.
 #[cfg(feature = "schemars08")]
 pub trait JsonSchemaEngineSpec:
     EngineSpec<
