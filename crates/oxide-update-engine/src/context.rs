@@ -9,7 +9,7 @@ use oxide_update_engine_types::{
     buffer::EventBuffer,
     errors::NestedEngineError,
     events::{Event, EventReport, ExecutionUuid, StepEventKind, StepProgress},
-    spec::{EngineSpec, NestedSpec, SerializableError},
+    spec::{EngineSpec, GenericSpec, SerializableError},
 };
 use std::{collections::HashMap, fmt, marker::PhantomData, sync::Mutex};
 use tokio::{
@@ -72,7 +72,7 @@ impl<S: EngineSpec> StepContext<S> {
     pub async fn send_nested_report<S2: EngineSpec>(
         &self,
         report: EventReport<S2>,
-    ) -> Result<(), NestedEngineError<NestedSpec>> {
+    ) -> Result<(), NestedEngineError<GenericSpec>> {
         let now = Instant::now();
 
         let mut res = Ok(());
@@ -291,7 +291,7 @@ impl<S: EngineSpec> StepContext<S> {
 /// deltas are sent over the channel.
 #[derive(Debug, Default)]
 struct NestedEventBuffer {
-    buffer: EventBuffer<NestedSpec>,
+    buffer: EventBuffer<GenericSpec>,
     last_seen: Option<usize>,
 }
 
@@ -302,7 +302,7 @@ impl NestedEventBuffer {
     fn add_event_report<S: EngineSpec>(
         &mut self,
         report: EventReport<S>,
-    ) -> EventReport<NestedSpec> {
+    ) -> EventReport<GenericSpec> {
         self.buffer.add_event_report(report.into_generic());
         self.buffer.generate_report_since(&mut self.last_seen)
     }
@@ -323,13 +323,13 @@ pub(crate) enum StepContextPayload<S: EngineSpec> {
     /// A single nested event with synchronization.
     NestedSingle {
         now: Instant,
-        event: Event<NestedSpec>,
+        event: Event<GenericSpec>,
         done: oneshot::Sender<Never>,
     },
     /// One out of a series of nested events sent in succession.
     Nested {
         now: Instant,
-        event: Event<NestedSpec>,
+        event: Event<GenericSpec>,
     },
     Sync {
         done: oneshot::Sender<Never>,

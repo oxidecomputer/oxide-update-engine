@@ -38,9 +38,8 @@ The key design split: `oxide-update-engine-types` has **zero dependency on the e
 
 Everything is parameterized by `S: EngineSpec`, a trait that bundles associated types (Component, StepId, StepMetadata, ProgressMetadata, CompletionMetadata, SkippedMetadata, Error). This acts as a "type family" that fully describes what domain-specific types flow through the engine.
 
-Two built-in instantiations:
-- **`GenericSpec<E>`**: all metadata fields are `serde_json::Value`, used as a lowest-common-denominator type for cross-engine communication. Concrete specs round-trip through `into_generic()`/`from_generic()`.
-- **`NestedSpec`** (`= GenericSpec<SerializableError>`): for nested engine events flowing upward through the event tree.
+One built-in instantiation:
+- **`GenericSpec`**: all metadata fields are `serde_json::Value` and errors are `SerializableError`, used as a lowest-common-denominator type for cross-engine communication and nested events. Concrete specs round-trip through `into_generic()`/`from_generic()`.
 
 ### Event system (types crate, `events.rs`)
 

@@ -12,7 +12,7 @@
 use crate::spec::JsonSchemaEngineSpec;
 use crate::{
     errors::ConvertGenericError,
-    spec::{AsError, EngineSpec, GenericSpec, NestedSpec},
+    spec::{EngineSpec, GenericSpec},
 };
 use derive_where::derive_where;
 use newtype_uuid::{TypedUuid, TypedUuidKind, TypedUuidTag};
@@ -67,8 +67,8 @@ impl<S: EngineSpec> Event<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: Event<GenericSpec<E>>,
+    pub fn from_generic(
+        value: Event<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         let ret = match value {
             Event::Step(event) => Event::Step(StepEvent::from_generic(event)?),
@@ -89,7 +89,7 @@ impl<S: EngineSpec> Event<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> Event<GenericSpec<E>> {
+    pub fn into_generic(self) -> Event<GenericSpec> {
         match self {
             Event::Step(event) => Event::Step(event.into_generic()),
             Event::Progress(event) => Event::Progress(event.into_generic()),
@@ -255,8 +255,8 @@ impl<S: EngineSpec> StepEvent<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: StepEvent<GenericSpec<E>>,
+    pub fn from_generic(
+        value: StepEvent<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         Ok(StepEvent {
             spec: value.spec,
@@ -278,7 +278,7 @@ impl<S: EngineSpec> StepEvent<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> StepEvent<GenericSpec<E>> {
+    pub fn into_generic(self) -> StepEvent<GenericSpec> {
         StepEvent {
             spec: self.spec,
             execution_id: self.execution_id,
@@ -465,7 +465,7 @@ pub enum StepEventKind<S: EngineSpec> {
         attempt: usize,
 
         /// The event that occurred.
-        event: Box<StepEvent<NestedSpec>>,
+        event: Box<StepEvent<GenericSpec>>,
 
         /// Total time elapsed since the start of the step. Includes prior
         /// attempts.
@@ -534,8 +534,8 @@ impl<S: EngineSpec> StepEventKind<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: StepEventKind<GenericSpec<E>>,
+    pub fn from_generic(
+        value: StepEventKind<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         let ret = match value {
             StepEventKind::NoStepsDefined => StepEventKind::NoStepsDefined,
@@ -688,7 +688,7 @@ impl<S: EngineSpec> StepEventKind<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> StepEventKind<GenericSpec<E>> {
+    pub fn into_generic(self) -> StepEventKind<GenericSpec> {
         match self {
             StepEventKind::NoStepsDefined => StepEventKind::NoStepsDefined,
             StepEventKind::ExecutionStarted {
@@ -914,8 +914,8 @@ impl<S: EngineSpec> StepOutcome<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: StepOutcome<GenericSpec<E>>,
+    pub fn from_generic(
+        value: StepOutcome<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         let ret = match value {
             StepOutcome::Success { message, metadata } => {
@@ -980,7 +980,7 @@ impl<S: EngineSpec> StepOutcome<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> StepOutcome<GenericSpec<E>> {
+    pub fn into_generic(self) -> StepOutcome<GenericSpec> {
         match self {
             StepOutcome::Success { message, metadata } => {
                 StepOutcome::Success {
@@ -1076,8 +1076,8 @@ impl<S: EngineSpec> ProgressEvent<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: ProgressEvent<GenericSpec<E>>,
+    pub fn from_generic(
+        value: ProgressEvent<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         Ok(Self {
             spec: value.spec,
@@ -1098,7 +1098,7 @@ impl<S: EngineSpec> ProgressEvent<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> ProgressEvent<GenericSpec<E>> {
+    pub fn into_generic(self) -> ProgressEvent<GenericSpec> {
         ProgressEvent {
             spec: self.spec,
             execution_id: self.execution_id,
@@ -1168,7 +1168,7 @@ pub enum ProgressEventKind<S: EngineSpec> {
         attempt: usize,
 
         /// The event that occurred.
-        event: Box<ProgressEvent<NestedSpec>>,
+        event: Box<ProgressEvent<GenericSpec>>,
 
         /// Total time elapsed since the start of the step. Includes prior
         /// attempts.
@@ -1251,8 +1251,8 @@ impl<S: EngineSpec> ProgressEventKind<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: ProgressEventKind<GenericSpec<E>>,
+    pub fn from_generic(
+        value: ProgressEventKind<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         let ret = match value {
             ProgressEventKind::WaitingForProgress {
@@ -1314,7 +1314,7 @@ impl<S: EngineSpec> ProgressEventKind<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> ProgressEventKind<GenericSpec<E>> {
+    pub fn into_generic(self) -> ProgressEventKind<GenericSpec> {
         match self {
             ProgressEventKind::WaitingForProgress {
                 step,
@@ -1400,8 +1400,8 @@ impl<S: EngineSpec> StepInfo<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: StepInfo<GenericSpec<E>>,
+    pub fn from_generic(
+        value: StepInfo<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         Ok(Self {
             id: serde_json::from_value(value.id)
@@ -1426,7 +1426,7 @@ impl<S: EngineSpec> StepInfo<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> StepInfo<GenericSpec<E>> {
+    pub fn into_generic(self) -> StepInfo<GenericSpec> {
         StepInfo {
             id: serde_json::to_value(self.id)
                 .unwrap_or(serde_json::Value::Null),
@@ -1464,8 +1464,8 @@ impl<S: EngineSpec> StepComponentSummary<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: StepComponentSummary<GenericSpec<E>>,
+    pub fn from_generic(
+        value: StepComponentSummary<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         Ok(Self {
             component: serde_json::from_value(value.component).map_err(
@@ -1485,9 +1485,7 @@ impl<S: EngineSpec> StepComponentSummary<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(
-        self,
-    ) -> StepComponentSummary<GenericSpec<E>> {
+    pub fn into_generic(self) -> StepComponentSummary<GenericSpec> {
         StepComponentSummary {
             component: serde_json::to_value(self.component)
                 .unwrap_or(serde_json::Value::Null),
@@ -1521,8 +1519,8 @@ impl<S: EngineSpec> StepInfoWithMetadata<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: StepInfoWithMetadata<GenericSpec<E>>,
+    pub fn from_generic(
+        value: StepInfoWithMetadata<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         Ok(Self {
             info: StepInfo::from_generic(value.info)
@@ -1548,9 +1546,7 @@ impl<S: EngineSpec> StepInfoWithMetadata<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(
-        self,
-    ) -> StepInfoWithMetadata<GenericSpec<E>> {
+    pub fn into_generic(self) -> StepInfoWithMetadata<GenericSpec> {
         StepInfoWithMetadata {
             info: self.info.into_generic(),
             metadata: self.metadata.map(|metadata| {
@@ -1769,8 +1765,8 @@ impl<S: EngineSpec> EventReport<S> {
     ///
     /// This version can be used to convert a generic type into a more concrete
     /// form.
-    pub fn from_generic<E: AsError>(
-        value: EventReport<GenericSpec<E>>,
+    pub fn from_generic(
+        value: EventReport<GenericSpec>,
     ) -> Result<Self, ConvertGenericError> {
         Ok(Self {
             step_events: value
@@ -1808,7 +1804,7 @@ impl<S: EngineSpec> EventReport<S> {
     /// [`serde_json::Value::Null`]. Since `serde_json::Value` represents
     /// an arbitrary JSON value, such data would have failed to serialize
     /// anyway.
-    pub fn into_generic<E: AsError>(self) -> EventReport<GenericSpec<E>> {
+    pub fn into_generic(self) -> EventReport<GenericSpec> {
         EventReport {
             step_events: self
                 .step_events

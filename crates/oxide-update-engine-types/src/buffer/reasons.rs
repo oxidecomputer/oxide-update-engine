@@ -5,7 +5,7 @@
 use super::{EventBuffer, StepKey};
 use crate::{
     events::StepOutcome,
-    spec::{EngineSpec, NestedSpec},
+    spec::{EngineSpec, GenericSpec},
 };
 use std::{fmt, sync::Arc, time::Duration};
 
@@ -53,7 +53,7 @@ pub struct CompletionInfo {
     pub attempt: usize,
 
     /// The outcome of the step: success, warning, or skipped.
-    pub outcome: StepOutcome<NestedSpec>,
+    pub outcome: StepOutcome<GenericSpec>,
 
     /// The total elapsed time as reported by the root event.
     pub root_total_elapsed: Duration,

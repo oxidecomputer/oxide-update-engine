@@ -5,7 +5,7 @@
 use anyhow::anyhow;
 use indent_write::fmt::IndentWriter;
 use serde::{Serialize, de::DeserializeOwned};
-use std::{fmt, fmt::Write, marker::PhantomData};
+use std::{fmt, fmt::Write};
 
 /// A specification for an `UpdateEngine`.
 ///
@@ -116,22 +116,16 @@ where
 {
 }
 
-/// Represents a fully generic step specification, as can be serialized
-/// over JSON.
-///
-/// Since errors aren't directly serialized, they can be any type that
-/// implements [`AsError`].
+/// A fully generic step specification where all metadata is
+/// [`serde_json::Value`] and errors are [`SerializableError`].
 ///
 /// Use this if you don't care about assigning types to any of the
-/// metadata components.
-pub struct GenericSpec<E> {
-    _marker: PhantomData<E>,
-}
+/// metadata components. This is the lowest-common-denominator type
+/// for cross-engine communication.
+pub struct GenericSpec(());
 
-// Manual impl: GenericSpec serializes the same way regardless of E,
-// so we don't require E: JsonSchema.
 #[cfg(feature = "schemars08")]
-impl<E> schemars::JsonSchema for GenericSpec<E> {
+impl schemars::JsonSchema for GenericSpec {
     fn schema_name() -> String {
         "GenericSpec".to_owned()
     }
@@ -139,13 +133,11 @@ impl<E> schemars::JsonSchema for GenericSpec<E> {
     fn json_schema(
         _: &mut schemars::r#gen::SchemaGenerator,
     ) -> schemars::schema::Schema {
-        // "Accept any value here" -- GenericSpec only cares about
-        // the schema name, not about the shape of E.
         schemars::schema::Schema::Bool(true)
     }
 }
 
-impl<E: AsError> EngineSpec for GenericSpec<E> {
+impl EngineSpec for GenericSpec {
     fn spec_name() -> String {
         "GenericSpec".to_owned()
     }
@@ -156,15 +148,12 @@ impl<E: AsError> EngineSpec for GenericSpec<E> {
     type ProgressMetadata = serde_json::Value;
     type CompletionMetadata = serde_json::Value;
     type SkippedMetadata = serde_json::Value;
-    type Error = E;
+    type Error = SerializableError;
 }
-
-/// A generic spec used for nested errors.
-pub type NestedSpec = GenericSpec<SerializableError>;
 
 /// A serializable representation of an error chain.
 ///
-/// This is the error type for [`NestedSpec`]. It captures the message
+/// This is the error type for [`GenericSpec`]. It captures the message
 /// and source chain of any `std::error::Error`, enabling errors to be
 /// serialized across process or network boundaries.
 #[derive(Clone, Debug)]
