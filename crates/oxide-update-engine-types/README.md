@@ -5,7 +5,7 @@
 ![License: MPL-2.0](https://img.shields.io/crates/l/oxide-update-engine-types.svg?)
 [![crates.io](https://img.shields.io/crates/v/oxide-update-engine-types.svg?logo=rust)](https://crates.io/crates/oxide-update-engine-types)
 [![docs.rs](https://img.shields.io/docsrs/oxide-update-engine-types.svg?logo=docs.rs)](https://docs.rs/oxide-update-engine-types)
-[![Rust: ^1.85.0](https://img.shields.io/badge/rust-^1.85.0-93450a.svg?logo=rust)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+[![Rust: ^1.88.0](https://img.shields.io/badge/rust-^1.88.0-93450a.svg?logo=rust)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
 <!-- cargo-sync-rdme ]] -->
 <!-- cargo-sync-rdme rustdoc [[ -->
 Types for `oxide-update-engine`.

@@ -382,17 +382,17 @@ impl BufferTestContext {
                 })
                 .unwrap();
 
-            if let Event::Step(event) = event {
-                if event_added {
-                    check_last_root_event_index(event, &buffer).with_context(
-                        || {
-                            format!(
-                                "{description}, at index {i}: \
-                                error with last root event index"
-                            )
-                        },
-                    )?;
-                }
+            if let Event::Step(event) = event
+                && event_added
+            {
+                check_last_root_event_index(event, &buffer).with_context(
+                    || {
+                        format!(
+                            "{description}, at index {i}: \
+                            error with last root event index"
+                        )
+                    },
+                )?;
             }
 
             receive_buffer.add_event_report(report.clone());
