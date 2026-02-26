@@ -14,7 +14,7 @@ use crate::{
         Event, EventReport, ExecutionUuid, ProgressEvent, ProgressEventKind,
         StepEvent, StepEventKind, StepEventPriority, StepInfo,
     },
-    spec::{EngineSpec, NestedSpec},
+    spec::{EngineSpec, GenericSpec},
 };
 use derive_where::derive_where;
 use indexmap::IndexMap;
@@ -943,7 +943,7 @@ struct NewExecutionAction {
     // * step key
     // * step info
     // * step sort key
-    steps_to_add: Vec<(StepKey, StepInfo<NestedSpec>, StepSortKey)>,
+    steps_to_add: Vec<(StepKey, StepInfo<GenericSpec>, StepSortKey)>,
 }
 
 /// An ordered list of steps contained in an event buffer.
@@ -1023,7 +1023,7 @@ impl EventBufferExecutionData {
 /// Step-related data for a particular key.
 #[derive_where(Clone, Debug)]
 pub struct EventBufferStepData<S: EngineSpec> {
-    step_info: StepInfo<NestedSpec>,
+    step_info: StepInfo<GenericSpec>,
 
     sort_key: StepSortKey,
 
@@ -1039,7 +1039,7 @@ pub struct EventBufferStepData<S: EngineSpec> {
 
 impl<S: EngineSpec> EventBufferStepData<S> {
     fn new(
-        step_info: StepInfo<NestedSpec>,
+        step_info: StepInfo<GenericSpec>,
         sort_key: StepSortKey,
         root_event_index: RootEventIndex,
     ) -> Self {
@@ -1054,7 +1054,7 @@ impl<S: EngineSpec> EventBufferStepData<S> {
     }
 
     #[inline]
-    pub fn step_info(&self) -> &StepInfo<NestedSpec> {
+    pub fn step_info(&self) -> &StepInfo<GenericSpec> {
         &self.step_info
     }
 

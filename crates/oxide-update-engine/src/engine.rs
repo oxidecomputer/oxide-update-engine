@@ -17,7 +17,7 @@ use oxide_update_engine_types::{
         StepComponentSummary, StepEvent, StepEventKind, StepInfo,
         StepInfoWithMetadata, StepOutcome, StepProgress,
     },
-    spec::{AsError, EngineSpec, NestedSpec},
+    spec::{AsError, EngineSpec, GenericSpec},
 };
 use std::{
     borrow::Cow,
@@ -1184,7 +1184,7 @@ impl<S: EngineSpec, F: FnMut() -> usize> StepProgressReporter<S, F> {
     async fn handle_nested(
         &mut self,
         now: Instant,
-        event: Event<NestedSpec>,
+        event: Event<GenericSpec>,
     ) -> Result<(), ExecutionError<S>> {
         match event {
             Event::Step(event) => {
