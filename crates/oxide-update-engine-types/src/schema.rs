@@ -42,6 +42,7 @@ pub(crate) const CRATE_NAME: &str = "oxide-update-engine-types";
 pub(crate) const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Module path for `events` types in this crate.
+#[cfg(feature = "schemars08")]
 pub(crate) const EVENTS_MODULE: &str = "oxide_update_engine_types::events";
 
 /// Full path to `GenericSpec` in this crate.
