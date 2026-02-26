@@ -395,15 +395,12 @@ fn register_nested_write_steps<'a>(
                     {
                         // Only send progress up to 50% to demonstrate
                         // not receiving full progress.
-                        if let Event::Progress(event) = &event {
-                            if let Some(counter) = event.kind.progress_counter()
-                            {
-                                if let Some(total) = counter.total {
-                                    if counter.current > total / 2 {
-                                        break;
-                                    }
-                                }
-                            }
+                        if let Event::Progress(event) = &event
+                            && let Some(counter) = event.kind.progress_counter()
+                            && let Some(total) = counter.total
+                            && counter.current > total / 2
+                        {
+                            break;
                         }
 
                         buffer.add_event(event);

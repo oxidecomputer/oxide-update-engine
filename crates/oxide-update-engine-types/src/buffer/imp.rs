@@ -406,28 +406,26 @@ impl<S: EngineSpec> EventStore<S> {
             }
         }
 
-        if let Some(key) = actions.progress_key {
-            if let Some(value) = self.map.get_mut(&key) {
-                // Set progress *before* adding the step event so that it can
-                // transition to the running state if it isn't there already.
-                if let Some(current_progress) = event.progress_event() {
-                    value.set_progress(current_progress);
-                }
+        if let Some(key) = actions.progress_key
+            && let Some(value) = self.map.get_mut(&key)
+        {
+            // Set progress *before* adding the step event so that it
+            // can transition to the running state if it isn't there
+            // already.
+            if let Some(current_progress) = event.progress_event() {
+                value.set_progress(current_progress);
             }
         }
 
-        if let Some(key) = actions.step_key {
-            if let Some(value) = self.map.get_mut(&key) {
-                match event.kind.priority() {
-                    StepEventPriority::High => {
-                        value.add_high_priority_step_event(event);
-                    }
-                    StepEventPriority::Low => {
-                        value.add_low_priority_step_event(
-                            event,
-                            max_low_priority,
-                        );
-                    }
+        if let Some(key) = actions.step_key
+            && let Some(value) = self.map.get_mut(&key)
+        {
+            match event.kind.priority() {
+                StepEventPriority::High => {
+                    value.add_high_priority_step_event(event);
+                }
+                StepEventPriority::Low => {
+                    value.add_low_priority_step_event(event, max_low_priority);
                 }
             }
         }
@@ -439,10 +437,10 @@ impl<S: EngineSpec> EventStore<S> {
             return;
         }
 
-        if let Some(key) = Self::step_key_for_progress_event(&event) {
-            if let Some(value) = self.map.get_mut(&key) {
-                value.set_progress(event);
-            }
+        if let Some(key) = Self::step_key_for_progress_event(&event)
+            && let Some(value) = self.map.get_mut(&key)
+        {
+            value.set_progress(event);
         }
     }
 
@@ -705,18 +703,17 @@ impl<S: EngineSpec> EventStore<S> {
         let mut dfs =
             DfsPostOrder::new(&self.event_tree, EventTreeNode::Step(root_key));
         while let Some(key) = dfs.next(&self.event_tree) {
-            if let EventTreeNode::Step(key) = key {
-                if key != root_key {
-                    if let Some(value) = self.map.get_mut(&key) {
-                        value.mark_completed(
-                            CompletionReason::ParentCompleted {
-                                parent_step: root_key,
-                                parent_info: info.clone(),
-                            },
-                            root_event_index,
-                        );
-                    }
-                }
+            if let EventTreeNode::Step(key) = key
+                && key != root_key
+                && let Some(value) = self.map.get_mut(&key)
+            {
+                value.mark_completed(
+                    CompletionReason::ParentCompleted {
+                        parent_step: root_key,
+                        parent_info: info.clone(),
+                    },
+                    root_event_index,
+                );
             }
         }
     }
@@ -741,31 +738,30 @@ impl<S: EngineSpec> EventStore<S> {
             EventTreeNode::Root(root_key.execution_id),
         );
         while let Some(key) = dfs.next(&self.event_tree) {
-            if let EventTreeNode::Step(key) = key {
-                if key != root_key {
-                    if let Some(value) = self.map.get_mut(&key) {
-                        // There's two kinds of nodes reachable from
-                        // EventTreeNode::Root that could be marked as
-                        // completed: subsequent steps within the same
-                        // execution, and steps in child executions.
-                        if key.execution_id == root_key.execution_id {
-                            value.mark_completed(
-                                CompletionReason::SubsequentStarted {
-                                    later_step: root_key,
-                                    root_total_elapsed: info.root_total_elapsed,
-                                },
-                                root_event_index,
-                            );
-                        } else {
-                            value.mark_completed(
-                                CompletionReason::ParentCompleted {
-                                    parent_step: root_key,
-                                    parent_info: info.clone(),
-                                },
-                                root_event_index,
-                            );
-                        }
-                    }
+            if let EventTreeNode::Step(key) = key
+                && key != root_key
+                && let Some(value) = self.map.get_mut(&key)
+            {
+                // There's two kinds of nodes reachable from
+                // EventTreeNode::Root that could be marked as
+                // completed: subsequent steps within the same
+                // execution, and steps in child executions.
+                if key.execution_id == root_key.execution_id {
+                    value.mark_completed(
+                        CompletionReason::SubsequentStarted {
+                            later_step: root_key,
+                            root_total_elapsed: info.root_total_elapsed,
+                        },
+                        root_event_index,
+                    );
+                } else {
+                    value.mark_completed(
+                        CompletionReason::ParentCompleted {
+                            parent_step: root_key,
+                            parent_info: info.clone(),
+                        },
+                        root_event_index,
+                    );
                 }
             }
         }
@@ -886,10 +882,10 @@ impl<S: EngineSpec> EventStore<S> {
         let mut dfs =
             DfsPostOrder::new(&self.event_tree, EventTreeNode::Step(root_key));
         while let Some(key) = dfs.next(&self.event_tree) {
-            if let EventTreeNode::Step(key) = key {
-                if let Some(value) = self.map.get_mut(&key) {
-                    (cb)(value, MarkStepFailedImplKind::Descendant);
-                }
+            if let EventTreeNode::Step(key) = key
+                && let Some(value) = self.map.get_mut(&key)
+            {
+                (cb)(value, MarkStepFailedImplKind::Descendant);
             }
         }
 
@@ -901,10 +897,10 @@ impl<S: EngineSpec> EventStore<S> {
             EventTreeNode::Root(root_key.execution_id),
         );
         while let Some(key) = dfs.next(&self.event_tree) {
-            if let EventTreeNode::Step(key) = key {
-                if let Some(value) = self.map.get_mut(&key) {
-                    (cb)(value, MarkStepFailedImplKind::Subsequent);
-                }
+            if let EventTreeNode::Step(key) = key
+                && let Some(value) = self.map.get_mut(&key)
+            {
+                (cb)(value, MarkStepFailedImplKind::Subsequent);
             }
         }
     }

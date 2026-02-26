@@ -159,11 +159,11 @@ impl<K: Eq + Ord, W: std::io::Write, S: EngineSpec> GroupDisplay<K, W, S> {
         if let Some(state) = self.single_states.get_mut(key) {
             let result = state.add_event_report(event_report);
             // Set self.start_sw to the max of root_total_elapsed and the current value.
-            if let Some(root_total_elapsed) = result.root_total_elapsed {
-                if self.start_sw.elapsed() < root_total_elapsed {
-                    self.start_sw =
-                        TokioSw::with_elapsed_started(root_total_elapsed);
-                }
+            if let Some(root_total_elapsed) = result.root_total_elapsed
+                && self.start_sw.elapsed() < root_total_elapsed
+            {
+                self.start_sw =
+                    TokioSw::with_elapsed_started(root_total_elapsed);
             }
 
             self.stats.apply_result(result);
@@ -500,13 +500,13 @@ impl<S: EngineSpec> SingleState<S> {
         event_buffer: &mut EventBuffer<S>,
         event_report: EventReport<S>,
     ) -> ApplyReportResult {
-        if let Some(root_execution_id) = event_buffer.root_execution_id() {
-            if event_report.root_execution_id != Some(root_execution_id) {
-                // The report is for a different execution ID -- assume that
-                // this event is completed and mark our current execution as
-                // completed.
-                return ApplyReportResult::Overwritten;
-            }
+        if let Some(root_execution_id) = event_buffer.root_execution_id()
+            && event_report.root_execution_id != Some(root_execution_id)
+        {
+            // The report is for a different execution ID -- assume
+            // that this event is completed and mark our current
+            // execution as completed.
+            return ApplyReportResult::Overwritten;
         }
 
         event_buffer.add_event_report(event_report);
