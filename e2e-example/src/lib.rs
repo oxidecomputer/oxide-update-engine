@@ -2,12 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use anyhow::Result;
-use clap::Parser;
-use e2e_example::App;
+mod app;
+mod display;
+mod spec;
 
-#[tokio::main(worker_threads = 2)]
-async fn main() -> Result<()> {
-    let app = App::parse();
-    app.exec().await
-}
+pub use app::App;

@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::{
-    DisplayStyle,
+    app::DisplayStyle,
     spec::{
         Event, ExampleComponent, ExampleStepId, ExampleStepMetadata,
         ProgressEvent, ProgressEventKind, StepEventKind, StepInfoWithMetadata,
