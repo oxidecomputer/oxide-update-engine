@@ -720,8 +720,8 @@ fn step_keys_impl<S: EngineSpec>(
 }
 
 #[derive(Copy, Clone, Debug)]
-#[allow(unused)]
 enum WithDeltas {
+    #[expect(unused)]
     Yes,
     No,
     Both,

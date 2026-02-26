@@ -44,9 +44,29 @@ impl schemars::JsonSchema for ExecutionUuidKind {
     }
 
     fn json_schema(
-        generator: &mut schemars::r#gen::SchemaGenerator,
+        _: &mut schemars::r#gen::SchemaGenerator,
     ) -> schemars::schema::Schema {
-        uuid::Uuid::json_schema(generator)
+        use crate::schema::{EVENTS_MODULE, rust_type_for_events};
+
+        // Produce a UUID schema with x-rust-type so that
+        // newtype-uuid's lifting mechanism produces a
+        // TypedUuid<ExecutionUuidKind> schema with path
+        // "oxide_update_engine_types::events::ExecutionUuid" (via
+        // the alias() method on TypedUuidKind).
+        schemars::schema::SchemaObject {
+            instance_type: Some(schemars::schema::InstanceType::String.into()),
+            format: Some("uuid".to_owned()),
+            extensions: [(
+                "x-rust-type".to_owned(),
+                rust_type_for_events(&format!(
+                    "{EVENTS_MODULE}::ExecutionUuidKind"
+                )),
+            )]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -98,13 +118,8 @@ impl<S: EngineSpec> Event<S> {
 }
 
 #[derive(Deserialize, Serialize)]
-#[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 #[derive_where(Clone, Debug, Eq, PartialEq)]
 #[serde(bound = "", rename_all = "snake_case")]
-#[cfg_attr(
-    feature = "schemars08",
-    schemars(rename = "StepEventFor{S}", bound = "S: JsonSchemaEngineSpec",)
-)]
 pub struct StepEvent<S: EngineSpec> {
     /// The specification that this event belongs to.
     ///
@@ -135,6 +150,79 @@ pub struct StepEvent<S: EngineSpec> {
     /// The kind of event this is.
     #[serde(rename = "data")]
     pub kind: StepEventKind<S>,
+}
+
+#[cfg(feature = "schemars08")]
+impl<S: JsonSchemaEngineSpec> schemars::JsonSchema for StepEvent<S> {
+    fn schema_name() -> String {
+        format!("StepEventFor{}", S::schema_name())
+    }
+
+    fn json_schema(
+        generator: &mut schemars::r#gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
+        use crate::schema::with_description;
+        use schemars::schema::{ObjectValidation, SchemaObject};
+
+        let mut obj = ObjectValidation::default();
+        obj.properties.insert(
+            "spec".to_owned(),
+            with_description(
+                generator.subschema_for::<String>(),
+                "The specification that this event belongs to.",
+            ),
+        );
+        obj.properties.insert(
+            "execution_id".to_owned(),
+            with_description(
+                generator.subschema_for::<ExecutionUuid>(),
+                "The execution ID.",
+            ),
+        );
+        obj.properties.insert(
+            "event_index".to_owned(),
+            with_description(
+                generator.subschema_for::<usize>(),
+                "A monotonically increasing index for this \
+                 `StepEvent`.",
+            ),
+        );
+        obj.properties.insert(
+            "total_elapsed".to_owned(),
+            with_description(
+                generator.subschema_for::<Duration>(),
+                "Total time elapsed since the start of execution.",
+            ),
+        );
+        obj.properties.insert(
+            "data".to_owned(),
+            with_description(
+                generator.subschema_for::<StepEventKind<S>>(),
+                "The kind of event this is.",
+            ),
+        );
+        obj.required =
+            ["spec", "execution_id", "event_index", "total_elapsed", "data"]
+                .into_iter()
+                .map(String::from)
+                .collect();
+
+        let mut extensions = serde_json::Map::new();
+        if let Some(info) = S::rust_type_info() {
+            extensions.insert(
+                "x-rust-type".to_owned(),
+                crate::schema::rust_type_for_generic(&info, "StepEvent"),
+            );
+        }
+
+        SchemaObject {
+            instance_type: Some(schemars::schema::InstanceType::Object.into()),
+            object: Some(Box::new(obj)),
+            extensions: extensions.into_iter().collect(),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl<S: EngineSpec> StepEvent<S> {
@@ -1040,16 +1128,8 @@ impl<S: EngineSpec> StepOutcome<S> {
 }
 
 #[derive(Deserialize, Serialize)]
-#[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 #[derive_where(Clone, Debug, Eq, PartialEq)]
 #[serde(bound = "", rename_all = "snake_case")]
-#[cfg_attr(
-    feature = "schemars08",
-    schemars(
-        rename = "ProgressEventFor{S}",
-        bound = "S: JsonSchemaEngineSpec",
-    )
-)]
 pub struct ProgressEvent<S: EngineSpec> {
     /// The specification that this event belongs to.
     ///
@@ -1069,6 +1149,70 @@ pub struct ProgressEvent<S: EngineSpec> {
     /// The kind of event this is.
     #[serde(rename = "data")]
     pub kind: ProgressEventKind<S>,
+}
+
+#[cfg(feature = "schemars08")]
+impl<S: JsonSchemaEngineSpec> schemars::JsonSchema for ProgressEvent<S> {
+    fn schema_name() -> String {
+        format!("ProgressEventFor{}", S::schema_name())
+    }
+
+    fn json_schema(
+        generator: &mut schemars::r#gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
+        use crate::schema::with_description;
+        use schemars::schema::{ObjectValidation, SchemaObject};
+
+        let mut obj = ObjectValidation::default();
+        obj.properties.insert(
+            "spec".to_owned(),
+            with_description(
+                generator.subschema_for::<String>(),
+                "The specification that this event belongs to.",
+            ),
+        );
+        obj.properties.insert(
+            "execution_id".to_owned(),
+            with_description(
+                generator.subschema_for::<ExecutionUuid>(),
+                "The execution ID.",
+            ),
+        );
+        obj.properties.insert(
+            "total_elapsed".to_owned(),
+            with_description(
+                generator.subschema_for::<Duration>(),
+                "Total time elapsed since the start of execution.",
+            ),
+        );
+        obj.properties.insert(
+            "data".to_owned(),
+            with_description(
+                generator.subschema_for::<ProgressEventKind<S>>(),
+                "The kind of event this is.",
+            ),
+        );
+        obj.required = ["spec", "execution_id", "total_elapsed", "data"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+
+        let mut extensions = serde_json::Map::new();
+        if let Some(info) = S::rust_type_info() {
+            extensions.insert(
+                "x-rust-type".to_owned(),
+                crate::schema::rust_type_for_generic(&info, "ProgressEvent"),
+            );
+        }
+
+        SchemaObject {
+            instance_type: Some(schemars::schema::InstanceType::Object.into()),
+            object: Some(Box::new(obj)),
+            extensions: extensions.into_iter().collect(),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl<S: EngineSpec> ProgressEvent<S> {
@@ -1564,7 +1708,6 @@ impl<S: EngineSpec> StepInfoWithMetadata<S> {
 /// subsequent events; that can happen e.g. if a fetch happens from multiple
 /// peers within a single attempt.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-#[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct ProgressCounter {
     /// The current progress.
@@ -1575,6 +1718,66 @@ pub struct ProgressCounter {
 
     /// Progress units.
     pub units: ProgressUnits,
+}
+
+#[cfg(feature = "schemars08")]
+impl schemars::JsonSchema for ProgressCounter {
+    fn schema_name() -> String {
+        "ProgressCounter".to_owned()
+    }
+
+    fn json_schema(
+        generator: &mut schemars::r#gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
+        use crate::schema::{
+            EVENTS_MODULE, rust_type_for_events, with_description,
+        };
+        use schemars::schema::{ObjectValidation, SchemaObject};
+
+        let mut obj = ObjectValidation::default();
+        obj.properties.insert(
+            "current".to_owned(),
+            with_description(
+                generator.subschema_for::<u64>(),
+                "The current progress.",
+            ),
+        );
+        obj.properties.insert(
+            "total".to_owned(),
+            with_description(
+                generator.subschema_for::<Option<u64>>(),
+                "The total progress.",
+            ),
+        );
+        obj.properties.insert(
+            "units".to_owned(),
+            with_description(
+                generator.subschema_for::<ProgressUnits>(),
+                "Progress units.",
+            ),
+        );
+        obj.required =
+            ["current", "units"].into_iter().map(String::from).collect();
+
+        SchemaObject {
+            metadata: Some(Box::new(schemars::schema::Metadata {
+                description: Some("Current progress.".to_owned()),
+                ..Default::default()
+            })),
+            instance_type: Some(schemars::schema::InstanceType::Object.into()),
+            object: Some(Box::new(obj)),
+            extensions: [(
+                "x-rust-type".to_owned(),
+                rust_type_for_events(&format!(
+                    "{EVENTS_MODULE}::ProgressCounter"
+                )),
+            )]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl ProgressCounter {
@@ -1596,9 +1799,36 @@ impl ProgressCounter {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-#[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 #[serde(transparent)]
 pub struct ProgressUnits(pub Cow<'static, str>);
+
+#[cfg(feature = "schemars08")]
+impl schemars::JsonSchema for ProgressUnits {
+    fn schema_name() -> String {
+        "ProgressUnits".to_owned()
+    }
+
+    fn json_schema(
+        generator: &mut schemars::r#gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
+        use crate::schema::{EVENTS_MODULE, rust_type_for_events};
+
+        // ProgressUnits is a transparent wrapper around a string.
+        // Delegate to String's schema and add x-rust-type.
+        let mut schema = match generator.subschema_for::<String>() {
+            schemars::schema::Schema::Object(obj) => obj,
+            // String always produces an Object schema.
+            other => {
+                return other;
+            }
+        };
+        schema.extensions.insert(
+            "x-rust-type".to_owned(),
+            rust_type_for_events(&format!("{EVENTS_MODULE}::ProgressUnits")),
+        );
+        schema.into()
+    }
+}
 
 impl ProgressUnits {
     /// Creates a new `ProgressUnits`.
@@ -1728,12 +1958,7 @@ impl<S: EngineSpec> StepProgress<S> {
 /// they show up as nested events.
 #[derive_where(Clone, Debug, Default, Eq, PartialEq)]
 #[derive(Deserialize, Serialize)]
-#[cfg_attr(feature = "schemars08", derive(schemars::JsonSchema))]
 #[serde(bound = "", rename_all = "snake_case")]
-#[cfg_attr(
-    feature = "schemars08",
-    schemars(rename = "EventReportFor{S}", bound = "S: JsonSchemaEngineSpec",)
-)]
 pub struct EventReport<S: EngineSpec> {
     /// A list of step events.
     ///
@@ -1758,6 +1983,81 @@ pub struct EventReport<S: EngineSpec> {
     ///
     /// `last_seen` can be used to retrieve deltas of events.
     pub last_seen: Option<usize>,
+}
+
+#[cfg(feature = "schemars08")]
+impl<S: JsonSchemaEngineSpec> schemars::JsonSchema for EventReport<S> {
+    fn schema_name() -> String {
+        format!("EventReportFor{}", S::schema_name())
+    }
+
+    fn json_schema(
+        generator: &mut schemars::r#gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
+        use crate::schema::with_description;
+        use schemars::schema::{ObjectValidation, SchemaObject};
+
+        let mut obj = ObjectValidation::default();
+        obj.properties.insert(
+            "step_events".to_owned(),
+            with_description(
+                generator.subschema_for::<Vec<StepEvent<S>>>(),
+                "A list of step events.",
+            ),
+        );
+        obj.properties.insert(
+            "progress_events".to_owned(),
+            with_description(
+                generator.subschema_for::<Vec<ProgressEvent<S>>>(),
+                "A list of progress events, or whether we're \
+                 currently waiting for a progress event.",
+            ),
+        );
+        obj.properties.insert(
+            "root_execution_id".to_owned(),
+            with_description(
+                generator.subschema_for::<Option<ExecutionUuid>>(),
+                "The root execution ID for this report.",
+            ),
+        );
+        obj.properties.insert(
+            "last_seen".to_owned(),
+            with_description(
+                generator.subschema_for::<Option<usize>>(),
+                "The last event seen.",
+            ),
+        );
+        obj.required = ["step_events", "progress_events"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+
+        let mut extensions = serde_json::Map::new();
+        if let Some(info) = S::rust_type_info() {
+            extensions.insert(
+                "x-rust-type".to_owned(),
+                crate::schema::rust_type_for_generic(&info, "EventReport"),
+            );
+        }
+
+        SchemaObject {
+            metadata: Some(Box::new(schemars::schema::Metadata {
+                description: Some(
+                    "An oxide-update-engine event report.\
+                     \n\nRemote reports can be passed into a \
+                     `StepContext`, in which case they show up as \
+                     nested events."
+                        .to_owned(),
+                ),
+                ..Default::default()
+            })),
+            instance_type: Some(schemars::schema::InstanceType::Object.into()),
+            object: Some(Box::new(obj)),
+            extensions: extensions.into_iter().collect(),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl<S: EngineSpec> EventReport<S> {
@@ -2104,6 +2404,264 @@ mod tests {
                     panic!("index {index}: unknown variant deserialized correctly: {error}")
                 });
             assert_eq!(expected, actual, "input matches actual output");
+        }
+    }
+
+    // --- Schema tests (schemars08 feature) ---
+
+    #[cfg(feature = "schemars08")]
+    mod schema_tests {
+        use super::*;
+        use crate::schema::RustTypeInfo;
+        use schemars::{JsonSchema, r#gen::SchemaGenerator, schema::Schema};
+
+        /// Extract the x-rust-type extension from a schema, if
+        /// present.
+        fn get_rust_type_ext(schema: &Schema) -> Option<&serde_json::Value> {
+            match schema {
+                Schema::Object(obj) => obj.extensions.get("x-rust-type"),
+                Schema::Bool(_) => None,
+            }
+        }
+
+        /// Assert that x-rust-type has the expected crate, version,
+        /// and path.
+        fn assert_rust_type_ext(
+            x_rust_type: &serde_json::Value,
+            expected_crate: &str,
+            expected_version: &str,
+            expected_path: &str,
+        ) {
+            assert_eq!(
+                x_rust_type.get("crate").and_then(|v| v.as_str()),
+                Some(expected_crate),
+                "x-rust-type crate"
+            );
+            assert_eq!(
+                x_rust_type.get("version").and_then(|v| v.as_str()),
+                Some(expected_version),
+                "x-rust-type version"
+            );
+            assert_eq!(
+                x_rust_type.get("path").and_then(|v| v.as_str()),
+                Some(expected_path),
+                "x-rust-type path"
+            );
+        }
+
+        // -- Non-generic types --
+
+        #[test]
+        fn execution_uuid_kind_rust_type() {
+            let mut generator = SchemaGenerator::default();
+            let schema = ExecutionUuidKind::json_schema(&mut generator);
+            let xrt = get_rust_type_ext(&schema).expect("x-rust-type present");
+            assert_rust_type_ext(
+                xrt,
+                "oxide-update-engine-types",
+                "0.1.0",
+                "oxide_update_engine_types::events\
+                 ::ExecutionUuidKind",
+            );
+        }
+
+        #[test]
+        fn execution_uuid_lifted_rust_type() {
+            // The TypedUuid<ExecutionUuidKind> schema should
+            // lift the x-rust-type with the alias
+            // "ExecutionUuid".
+            let mut generator = SchemaGenerator::default();
+            let schema = ExecutionUuid::json_schema(&mut generator);
+            let xrt = get_rust_type_ext(&schema)
+                .expect("x-rust-type present on ExecutionUuid");
+            assert_rust_type_ext(
+                xrt,
+                "oxide-update-engine-types",
+                "0.1.0",
+                "oxide_update_engine_types::events\
+                 ::ExecutionUuid",
+            );
+        }
+
+        // -- Full schema snapshot (covers all types transitively) --
+
+        #[test]
+        fn event_report_generic_spec_schema() {
+            let schema = schemars::schema_for!(EventReport<GenericSpec>);
+            let json = serde_json::to_string_pretty(&schema)
+                .expect("serialized schema");
+            expectorate::assert_contents(
+                "tests/output/event_report_generic_spec_schema.json",
+                &json,
+            );
+        }
+
+        // -- Generic types with a spec that returns None for
+        // rust_type_info --
+
+        impl schemars::JsonSchema for super::TestSpec {
+            fn schema_name() -> String {
+                "TestSpec".to_owned()
+            }
+
+            fn json_schema(_: &mut SchemaGenerator) -> Schema {
+                Schema::Bool(true)
+            }
+        }
+
+        #[test]
+        fn step_event_no_rust_type_without_info() {
+            let mut generator = SchemaGenerator::default();
+            let schema =
+                StepEvent::<super::TestSpec>::json_schema(&mut generator);
+            assert!(
+                get_rust_type_ext(&schema).is_none(),
+                "no x-rust-type when spec returns None"
+            );
+        }
+
+        #[test]
+        fn progress_event_no_rust_type_without_info() {
+            let mut generator = SchemaGenerator::default();
+            let schema =
+                ProgressEvent::<super::TestSpec>::json_schema(&mut generator);
+            assert!(
+                get_rust_type_ext(&schema).is_none(),
+                "no x-rust-type when spec returns None"
+            );
+        }
+
+        #[test]
+        fn event_report_no_rust_type_without_info() {
+            let mut generator = SchemaGenerator::default();
+            let schema =
+                EventReport::<super::TestSpec>::json_schema(&mut generator);
+            assert!(
+                get_rust_type_ext(&schema).is_none(),
+                "no x-rust-type when spec returns None"
+            );
+        }
+
+        // -- Generic types with a spec whose rust_type_info points
+        // to an external crate --
+
+        /// A spec that returns `RustTypeInfo` pointing to a
+        /// hypothetical external crate, simulating a user-defined
+        /// spec in a downstream consumer.
+        enum TestSpecWithInfo {}
+
+        impl crate::spec::EngineSpec for TestSpecWithInfo {
+            fn spec_name() -> String {
+                "TestSpecWithInfo".to_owned()
+            }
+
+            type Component = serde_json::Value;
+            type StepId = serde_json::Value;
+            type StepMetadata = serde_json::Value;
+            type ProgressMetadata = serde_json::Value;
+            type CompletionMetadata = serde_json::Value;
+            type SkippedMetadata = serde_json::Value;
+            type Error = anyhow::Error;
+
+            fn rust_type_info() -> Option<RustTypeInfo> {
+                Some(RustTypeInfo {
+                    crate_name: "my-external-crate",
+                    version: "1.2.3",
+                    path: "my_external_crate::MySpec",
+                })
+            }
+        }
+
+        impl JsonSchema for TestSpecWithInfo {
+            fn schema_name() -> String {
+                "TestSpecWithInfo".to_owned()
+            }
+
+            fn json_schema(_: &mut SchemaGenerator) -> Schema {
+                Schema::Bool(true)
+            }
+        }
+
+        /// Assert that the outer type in an x-rust-type extension
+        /// points to `oxide-update-engine-types`, while the
+        /// parameter points to the spec's crate.
+        fn assert_external_spec_rust_type(
+            x_rust_type: &serde_json::Value,
+            expected_outer_path: &str,
+            expected_param_crate: &str,
+            expected_param_version: &str,
+            expected_param_path: &str,
+        ) {
+            // Outer type: always oxide-update-engine-types.
+            assert_rust_type_ext(
+                x_rust_type,
+                "oxide-update-engine-types",
+                "0.1.0",
+                expected_outer_path,
+            );
+
+            // Parameter: the spec's crate.
+            let params = x_rust_type
+                .get("parameters")
+                .and_then(|v| v.as_array())
+                .expect("parameters array present");
+            assert_eq!(params.len(), 1, "exactly one parameter");
+            let param_xrt = params[0]
+                .get("x-rust-type")
+                .expect("parameter x-rust-type present");
+            assert_rust_type_ext(
+                param_xrt,
+                expected_param_crate,
+                expected_param_version,
+                expected_param_path,
+            );
+        }
+
+        #[test]
+        fn step_event_external_spec_rust_type() {
+            let mut generator = SchemaGenerator::default();
+            let schema =
+                StepEvent::<TestSpecWithInfo>::json_schema(&mut generator);
+            let xrt = get_rust_type_ext(&schema).expect("x-rust-type present");
+            assert_external_spec_rust_type(
+                xrt,
+                "oxide_update_engine_types::events::StepEvent",
+                "my-external-crate",
+                "1.2.3",
+                "my_external_crate::MySpec",
+            );
+        }
+
+        #[test]
+        fn progress_event_external_spec_rust_type() {
+            let mut generator = SchemaGenerator::default();
+            let schema =
+                ProgressEvent::<TestSpecWithInfo>::json_schema(&mut generator);
+            let xrt = get_rust_type_ext(&schema).expect("x-rust-type present");
+            assert_external_spec_rust_type(
+                xrt,
+                "oxide_update_engine_types::events\
+                 ::ProgressEvent",
+                "my-external-crate",
+                "1.2.3",
+                "my_external_crate::MySpec",
+            );
+        }
+
+        #[test]
+        fn event_report_external_spec_rust_type() {
+            let mut generator = SchemaGenerator::default();
+            let schema =
+                EventReport::<TestSpecWithInfo>::json_schema(&mut generator);
+            let xrt = get_rust_type_ext(&schema).expect("x-rust-type present");
+            assert_external_spec_rust_type(
+                xrt,
+                "oxide_update_engine_types::events\
+                 ::EventReport",
+                "my-external-crate",
+                "1.2.3",
+                "my_external_crate::MySpec",
+            );
         }
     }
 }

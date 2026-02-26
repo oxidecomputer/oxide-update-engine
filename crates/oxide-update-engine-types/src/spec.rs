@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use crate::schema::RustTypeInfo;
 use anyhow::anyhow;
 use indent_write::fmt::IndentWriter;
 use serde::{Serialize, de::DeserializeOwned};
@@ -88,6 +89,16 @@ pub trait EngineSpec: Send + 'static {
     /// Both can be converted to a dynamic `Error`, though. We use
     /// `AsError` to abstract over both sorts of errors.
     type Error: AsError + fmt::Debug + Send + Sync;
+
+    /// Information for the `x-rust-type` JSON Schema extension.
+    ///
+    /// When this returns `Some`, generic types parameterized by this
+    /// spec will include the `x-rust-type` extension in their JSON
+    /// Schema, enabling automatic type replacement in typify and
+    /// progenitor.
+    fn rust_type_info() -> Option<RustTypeInfo> {
+        None
+    }
 }
 
 #[cfg(feature = "schemars08")]
@@ -149,6 +160,14 @@ impl EngineSpec for GenericSpec {
     type CompletionMetadata = serde_json::Value;
     type SkippedMetadata = serde_json::Value;
     type Error = SerializableError;
+
+    fn rust_type_info() -> Option<RustTypeInfo> {
+        Some(RustTypeInfo {
+            crate_name: crate::schema::CRATE_NAME,
+            version: crate::schema::VERSION,
+            path: crate::schema::GENERIC_SPEC_PATH,
+        })
+    }
 }
 
 /// A serializable representation of an error chain.
