@@ -18,4 +18,5 @@ pub mod buffer;
 pub mod errors;
 pub mod events;
 mod macros;
+pub mod schema;
 pub mod spec;

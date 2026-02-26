@@ -42,8 +42,10 @@ pre-release-replacements = [
 
 [dev-dependencies]
 anyhow.workspace = true
+expectorate.workspace = true
 indexmap.workspace = true
 indoc.workspace = true
+schemars = { workspace = true }
 oxide-update-engine-test-utils.workspace = true
 petgraph.workspace = true
 serde_json.workspace = true
