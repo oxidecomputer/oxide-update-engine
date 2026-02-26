@@ -14,7 +14,7 @@ This file provides guidance to LLMs when working with code in this repository.
 - **Feature powerset verification**: `just powerset check` or `just powerset nextest run` (uses `cargo hack --feature-powerset`; CI runs this)
 - **Build docs**: `just rustdoc`
 
-CI runs clippy and tests against the full feature powerset on both MSRV (1.85) and stable. `RUSTFLAGS=-D warnings` is enforced.
+CI runs clippy and tests against the full feature powerset on both MSRV (1.88) and stable. `RUSTFLAGS=-D warnings` is enforced.
 
 ## Project overview
 
@@ -83,5 +83,5 @@ Converts push-based events into pull-based `EventReport`s. Uses a `petgraph::DiG
 ## Style notes
 
 - `rustfmt.toml` uses `max_width = 80` and `use_small_heuristics = "max"`.
-- Rust edition 2024, MSRV 1.85.
+- Rust edition 2024, MSRV 1.88.
 - Optional feature: `schemars08` for JSON Schema generation.
