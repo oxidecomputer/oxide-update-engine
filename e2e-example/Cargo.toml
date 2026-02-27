@@ -37,3 +37,6 @@ slog-async.workspace = true
 slog-term.workspace = true
 supports-color.workspace = true
 tokio = { workspace = true, features = ["io-util", "fs", "macros", "rt-multi-thread"] }
+
+[package.metadata.release]
+release = false

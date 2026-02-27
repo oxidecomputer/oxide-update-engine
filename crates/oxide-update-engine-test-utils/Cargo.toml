@@ -17,3 +17,6 @@ serde_json.workspace = true
 slog.workspace = true
 tokio.workspace = true
 tokio-stream.workspace = true
+
+[package.metadata.release]
+release = false

@@ -1,11 +1,9 @@
 sign-tag = true
 shared-version = true
 consolidate-commits = false
-pre-release-commit-message = "[{{crate_name}}] version {{version}}"
-tag-message = "[{{crate_name}}] version {{version}}"
-tag-name = "{{crate_name}}-{{version}}"
+pre-release-commit-message = "[oxide-update-engine] version {{version}}"
+tag-message = "[oxide-update-engine] version {{version}}"
+tag-name = "oxide-update-engine-{{version}}"
 publish = false
 dependent-version = "upgrade"
-pre-release-replacements = [
-    {file="CHANGELOG.md", search="Unreleased", replace="{{version}}"},
-]
+pre-release-hook = ["just", "generate-readmes"]
