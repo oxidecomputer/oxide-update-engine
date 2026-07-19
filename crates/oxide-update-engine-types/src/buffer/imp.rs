@@ -143,6 +143,16 @@ impl<S: EngineSpec> EventBuffer<S> {
         self.event_store.event_map_value_dfs()
     }
 
+    /// Returns the steps for a given execution in step index order.
+    ///
+    /// If the execution is unknown, returns an empty iterator.
+    pub fn iter_steps_for_execution(
+        &self,
+        execution_id: ExecutionUuid,
+    ) -> impl Iterator<Item = (StepKey, &EventBufferStepData<S>)> + '_ {
+        self.event_store.steps_for_execution(execution_id).into_iter()
+    }
+
     /// Returns information about the given step, as currently tracked by the
     /// buffer.
     pub fn get(&self, step_key: &StepKey) -> Option<&EventBufferStepData<S>> {
@@ -320,6 +330,24 @@ impl<S: EngineSpec> EventStore<S> {
         })
     }
 
+    fn steps_for_execution(
+        &self,
+        execution_id: ExecutionUuid,
+    ) -> Vec<(StepKey, &EventBufferStepData<S>)> {
+        let mut steps: Vec<_> = self
+            .event_tree
+            .neighbors(EventTreeNode::Root(execution_id))
+            .filter_map(|node| match node {
+                EventTreeNode::Step(key) => Some((key, &self.map[&key])),
+                EventTreeNode::Root(_) => None,
+            })
+            .collect();
+        // Sort steps by their index rather than relying on the tree's
+        // edge-insertion order.
+        steps.sort_unstable_by_key(|(key, _)| key.index);
+        steps
+    }
+
     /// Handles a non-nested step event.
     fn handle_root_step_event(
         &mut self,
@@ -366,8 +394,10 @@ impl<S: EngineSpec> EventStore<S> {
                             match self.map.get_mut(&parent_key) {
                                 Some(parent_data) => {
                                     let child_index =
-                                        parent_data.child_executions_seen;
-                                    parent_data.child_executions_seen += 1;
+                                        parent_data.child_execution_ids.len();
+                                    parent_data
+                                        .child_execution_ids
+                                        .push(new_execution.execution_id);
                                     Some((parent_key, child_index))
                                 }
                                 None => {
@@ -1023,7 +1053,9 @@ pub struct EventBufferStepData<S: EngineSpec> {
 
     sort_key: StepSortKey,
 
-    child_executions_seen: usize,
+    // Child executions nested under this step in first-seen order (which
+    // matches child index order).
+    child_execution_ids: Vec<ExecutionUuid>,
 
     // Invariant: stored in order sorted by leaf event index.
     high_priority: Vec<StepEvent<S>>,
@@ -1042,7 +1074,7 @@ impl<S: EngineSpec> EventBufferStepData<S> {
         Self {
             step_info,
             sort_key,
-            child_executions_seen: 0,
+            child_execution_ids: Vec::new(),
             high_priority: Vec::new(),
             step_status: StepStatus::NotStarted,
             last_root_event_index: root_event_index,
@@ -1056,7 +1088,14 @@ impl<S: EngineSpec> EventBufferStepData<S> {
 
     #[inline]
     pub fn child_executions_seen(&self) -> usize {
-        self.child_executions_seen
+        self.child_execution_ids.len()
+    }
+
+    /// Returns the child executions nested under this step, in child index
+    /// order.
+    #[inline]
+    pub fn child_execution_ids(&self) -> &[ExecutionUuid] {
+        &self.child_execution_ids
     }
 
     #[inline]

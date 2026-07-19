@@ -25,7 +25,7 @@ use oxide_update_engine_types::{
     spec::EngineSpec,
 };
 use serde::{Deserialize, de::IntoDeserializer};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[tokio::test]
 async fn test_buffer() {
@@ -486,6 +486,54 @@ impl BufferTestContext {
             ensure!(
                 data1_id < data2_id,
                 "data 1 ID {data1_id} < data 2 ID {data2_id}"
+            );
+        }
+
+        // iter_steps_for_execution and child_execution_ids must match what
+        // inverting iter_steps_recursive via parent_key_and_child_index
+        // produces.
+        let mut steps_by_execution: HashMap<ExecutionUuid, Vec<StepKey>> =
+            HashMap::new();
+        let mut child_execs: HashMap<StepKey, Vec<(usize, ExecutionUuid)>> =
+            HashMap::new();
+        for (key, _data) in buffer.iter_steps_recursive() {
+            steps_by_execution.entry(key.execution_id).or_default().push(key);
+            if let Some(exec_data) =
+                buffer.get_execution_data(&key.execution_id)
+                && let Some((parent_key, child_index)) =
+                    exec_data.parent_key_and_child_index()
+            {
+                let entry = child_execs.entry(parent_key).or_default();
+                if !entry
+                    .iter()
+                    .any(|(_, exec_id)| *exec_id == key.execution_id)
+                {
+                    entry.push((child_index, key.execution_id));
+                }
+            }
+        }
+        for (execution_id, expected_keys) in &mut steps_by_execution {
+            expected_keys.sort_by_key(|key| key.index);
+            let actual_keys: Vec<_> = buffer
+                .iter_steps_for_execution(*execution_id)
+                .map(|(key, _)| key)
+                .collect();
+            ensure!(
+                &actual_keys == expected_keys,
+                "iter_steps_for_execution({execution_id:?}) matches \
+                 recursive iteration: {actual_keys:?} vs {expected_keys:?}"
+            );
+        }
+        for (key, data) in buffer.iter_steps_recursive() {
+            let mut expected = child_execs.remove(&key).unwrap_or_default();
+            expected.sort_by_key(|(child_index, _)| *child_index);
+            let expected: Vec<_> =
+                expected.into_iter().map(|(_, exec_id)| exec_id).collect();
+            ensure!(
+                data.child_execution_ids() == expected,
+                "child_execution_ids for {key:?} matches \
+                 parent_key_and_child_index inversion: {:?} vs {expected:?}",
+                data.child_execution_ids(),
             );
         }
 
