@@ -26,5 +26,7 @@ mod utils;
 pub use group_display::{GroupDisplay, GroupDisplayStats};
 pub use line_display::{LineDisplay, LineDisplayStyles};
 // Re-export AbortMessageDisplay from the types crate.
-pub use oxide_update_engine_types::buffer::AbortMessageDisplay;
+pub use oxide_update_engine_types::buffer::{
+    AbortMessageDisplay, FailureMessageDisplay,
+};
 pub use utils::*;

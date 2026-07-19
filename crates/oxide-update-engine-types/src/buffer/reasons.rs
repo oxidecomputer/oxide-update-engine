@@ -92,6 +92,16 @@ impl FailureReason {
             Self::ParentFailed { .. } => None,
         }
     }
+
+    /// Returns a displayer for the failure message.
+    ///
+    /// The buffer is used to resolve step keys to step names.
+    pub fn message_display<'a, S: EngineSpec>(
+        &'a self,
+        buffer: &'a EventBuffer<S>,
+    ) -> FailureMessageDisplay<'a, S> {
+        FailureMessageDisplay::new(self, buffer)
+    }
 }
 
 /// Information about a failed step.
@@ -242,4 +252,63 @@ impl<S: EngineSpec> fmt::Display for AbortMessageDisplay<'_, S> {
             }
         }
     }
+}
+
+/// Displays the message for an execution failure.
+///
+/// The message is displayed in the form `message: cause1: cause2...`.
+///
+/// Returned by [`FailureReason::message_display`].
+pub struct FailureMessageDisplay<'a, S: EngineSpec> {
+    reason: &'a FailureReason,
+    buffer: &'a EventBuffer<S>,
+}
+
+impl<'a, S: EngineSpec> FailureMessageDisplay<'a, S> {
+    pub(crate) fn new(
+        reason: &'a FailureReason,
+        buffer: &'a EventBuffer<S>,
+    ) -> Self {
+        Self { reason, buffer }
+    }
+}
+
+impl<S: EngineSpec> fmt::Display for FailureMessageDisplay<'_, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.reason {
+            FailureReason::StepFailed(info) => {
+                write_message_and_causes(f, &info.message, &info.causes)
+            }
+            FailureReason::ParentFailed { parent_step, parent_info } => {
+                let parent_description =
+                    if let Some(step) = self.buffer.get(parent_step) {
+                        &step.step_info().description
+                    } else {
+                        "unknown step"
+                    };
+
+                write!(
+                    f,
+                    "parent step \"{parent_description}\" failed with: "
+                )?;
+                write_message_and_causes(
+                    f,
+                    &parent_info.message,
+                    &parent_info.causes,
+                )
+            }
+        }
+    }
+}
+
+fn write_message_and_causes(
+    f: &mut fmt::Formatter<'_>,
+    message: &str,
+    causes: &[String],
+) -> fmt::Result {
+    write!(f, "{message}")?;
+    for cause in causes {
+        write!(f, ": {cause}")?;
+    }
+    Ok(())
 }
