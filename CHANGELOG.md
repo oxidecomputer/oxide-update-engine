@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## Unreleased - ReleaseDate
 
+## [0.1.1] - 2026-07-20
+
 ### Added
 
 - `EventBuffer::iter_steps_for_execution` returns the steps of a single execution
@@ -21,4 +23,5 @@ Initial extraction from the [omicron](https://github.com/oxidecomputer/omicron)
 repository.
 
 <!-- next-url -->
+[0.1.1]: https://github.com/oxidecomputer/oxide-update-engine/releases/tag/oxide-update-engine-0.1.1
 [0.1.0]: https://github.com/oxidecomputer/oxide-update-engine/releases/tag/oxide-update-engine-0.1.0
