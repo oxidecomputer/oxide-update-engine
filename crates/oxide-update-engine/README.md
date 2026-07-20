@@ -15,7 +15,7 @@ The `oxide-update-engine` crate provides the execution engine for
 running update steps.
 
 * For types-only consumers (e.g. API clients), see
-  [`oxide-update-engine-types`](https://docs.rs/oxide-update-engine-types/0.1.0/oxide_update_engine_types/index.html).
+  [`oxide-update-engine-types`](https://docs.rs/oxide-update-engine-types/0.1.1/oxide_update_engine_types/index.html).
 * For code to display update engine events as a human-readable
   stream, see [`oxide-update-engine-display`](https://docs.rs/oxide-update-engine-display).
 
