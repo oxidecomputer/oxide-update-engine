@@ -6,4 +6,4 @@ tag-message = "[oxide-update-engine] version {{version}}"
 tag-name = "oxide-update-engine-{{version}}"
 publish = false
 dependent-version = "upgrade"
-pre-release-hook = ["just", "generate-readmes"]
+pre-release-hook = ["just", "generate-readmes", "regenerate-schemas"]

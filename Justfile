@@ -17,6 +17,10 @@ rustdoc:
 generate-readmes:
     cargo sync-rdme --toolchain nightly-2026-04-30 --workspace --all-features
 
+# Regenerate schema snapshots that embed crate versions via `x-rust-type`.
+regenerate-schemas:
+    EXPECTORATE=overwrite cargo nextest run -p oxide-update-engine-types --all-features -E 'test(event_report_generic_spec_schema)'
+
 # Run cargo release in CI.
 ci-cargo-release:
     # cargo-release requires a release off a branch.
