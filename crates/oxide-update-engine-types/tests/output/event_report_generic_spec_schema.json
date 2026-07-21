@@ -50,12 +50,12 @@
         "x-rust-type": {
           "crate": "oxide-update-engine-types",
           "path": "oxide_update_engine_types::spec::GenericSpec",
-          "version": "0.1.1"
+          "version": "0.1.2"
         }
       }
     ],
     "path": "oxide_update_engine_types::events::EventReport",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "definitions": {
     "Duration": {
@@ -83,7 +83,7 @@
       "x-rust-type": {
         "crate": "oxide-update-engine-types",
         "path": "oxide_update_engine_types::events::ExecutionUuid",
-        "version": "0.1.1"
+        "version": "0.1.2"
       }
     },
     "ProgressCounter": {
@@ -121,7 +121,7 @@
       "x-rust-type": {
         "crate": "oxide-update-engine-types",
         "path": "oxide_update_engine_types::events::ProgressCounter",
-        "version": "0.1.1"
+        "version": "0.1.2"
       }
     },
     "ProgressEventForGenericSpec": {
@@ -169,12 +169,12 @@
             "x-rust-type": {
               "crate": "oxide-update-engine-types",
               "path": "oxide_update_engine_types::spec::GenericSpec",
-              "version": "0.1.1"
+              "version": "0.1.2"
             }
           }
         ],
         "path": "oxide_update_engine_types::events::ProgressEvent",
-        "version": "0.1.1"
+        "version": "0.1.2"
       }
     },
     "ProgressEventKindForGenericSpec": {
@@ -370,7 +370,7 @@
       "x-rust-type": {
         "crate": "oxide-update-engine-types",
         "path": "oxide_update_engine_types::events::ProgressUnits",
-        "version": "0.1.1"
+        "version": "0.1.2"
       }
     },
     "StepComponentSummaryForGenericSpec": {
@@ -443,12 +443,12 @@
             "x-rust-type": {
               "crate": "oxide-update-engine-types",
               "path": "oxide_update_engine_types::spec::GenericSpec",
-              "version": "0.1.1"
+              "version": "0.1.2"
             }
           }
         ],
         "path": "oxide_update_engine_types::events::StepEvent",
-        "version": "0.1.1"
+        "version": "0.1.2"
       }
     },
     "StepEventKindForGenericSpec": {

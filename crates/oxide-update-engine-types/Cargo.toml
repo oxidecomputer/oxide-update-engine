@@ -1,6 +1,6 @@
 [package]
 name = "oxide-update-engine-types"
-version = "0.1.1"
+version = "0.1.2"
 description = "Serializable types for the oxide-update-engine framework."
 repository.workspace = true
 edition.workspace = true
