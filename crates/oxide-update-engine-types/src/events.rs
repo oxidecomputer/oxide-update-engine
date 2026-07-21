@@ -1327,16 +1327,41 @@ pub enum ProgressEventKind<S: EngineSpec> {
     Unknown,
 }
 
+/// The progress of a leaf event.
+///
+/// Returned by [`ProgressEventKind::leaf_progress`].
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LeafProgress<'a> {
+    WaitingForProgress,
+    Progress(Option<&'a ProgressCounter>),
+    Unknown,
+}
+
 impl<S: EngineSpec> ProgressEventKind<S> {
     /// Returns the progress counter for this event, if available.
     pub fn progress_counter(&self) -> Option<&ProgressCounter> {
+        match self.leaf_progress() {
+            LeafProgress::Progress(counter) => counter,
+            LeafProgress::WaitingForProgress | LeafProgress::Unknown => None,
+        }
+    }
+
+    /// Returns a [`LeafProgress`] for this event.
+    ///
+    /// This is similar to [`Self::progress_counter`], but distinguishes
+    /// "waiting for progress" from "unknown progress".
+    pub fn leaf_progress(&self) -> LeafProgress<'_> {
         match self {
-            ProgressEventKind::Progress { progress, .. } => progress.as_ref(),
-            ProgressEventKind::Nested { event, .. } => {
-                event.kind.progress_counter()
+            ProgressEventKind::WaitingForProgress { .. } => {
+                LeafProgress::WaitingForProgress
             }
-            ProgressEventKind::WaitingForProgress { .. }
-            | ProgressEventKind::Unknown => None,
+            ProgressEventKind::Progress { progress, .. } => {
+                LeafProgress::Progress(progress.as_ref())
+            }
+            ProgressEventKind::Nested { event, .. } => {
+                event.kind.leaf_progress()
+            }
+            ProgressEventKind::Unknown => LeafProgress::Unknown,
         }
     }
 
@@ -2412,6 +2437,141 @@ mod tests {
                 });
             assert_eq!(expected, actual, "input matches actual output");
         }
+    }
+
+    fn generic_step() -> StepInfoWithMetadata<GenericSpec> {
+        StepInfoWithMetadata {
+            info: StepInfo {
+                id: serde_json::Value::Null,
+                component: serde_json::Value::Null,
+                description: "Description".into(),
+                index: 0,
+                component_index: 0,
+                total_component_steps: 1,
+            },
+            metadata: None,
+        }
+    }
+
+    fn generic_progress_event(
+        kind: ProgressEventKind<GenericSpec>,
+    ) -> ProgressEvent<GenericSpec> {
+        ProgressEvent {
+            spec: GenericSpec::spec_name(),
+            execution_id: test_execution_id(),
+            total_elapsed: Duration::ZERO,
+            kind,
+        }
+    }
+
+    fn generic_progress(
+        progress: Option<ProgressCounter>,
+    ) -> ProgressEventKind<GenericSpec> {
+        ProgressEventKind::Progress {
+            step: generic_step(),
+            attempt: 1,
+            metadata: serde_json::Value::Null,
+            progress,
+            step_elapsed: Duration::ZERO,
+            attempt_elapsed: Duration::ZERO,
+        }
+    }
+
+    fn generic_waiting() -> ProgressEventKind<GenericSpec> {
+        ProgressEventKind::WaitingForProgress {
+            step: generic_step(),
+            attempt: 1,
+            step_elapsed: Duration::ZERO,
+            attempt_elapsed: Duration::ZERO,
+        }
+    }
+
+    fn nest(
+        inner: ProgressEventKind<GenericSpec>,
+    ) -> ProgressEventKind<GenericSpec> {
+        ProgressEventKind::Nested {
+            step: generic_step(),
+            attempt: 1,
+            event: Box::new(generic_progress_event(inner)),
+            step_elapsed: Duration::ZERO,
+            attempt_elapsed: Duration::ZERO,
+        }
+    }
+
+    #[test]
+    fn leaf_progress_recurses_to_innermost_counter() {
+        let counter = ProgressCounter::current(42, ProgressUnits::BYTES);
+        let leaf = generic_progress(Some(counter.clone()));
+
+        let nested = nest(nest(leaf));
+
+        assert_eq!(
+            nested.leaf_progress(),
+            LeafProgress::Progress(Some(&counter)),
+            "leaf_progress recurses to the innermost counter",
+        );
+        assert_eq!(
+            nested.progress_counter(),
+            Some(&counter),
+            "progress_counter agrees with leaf_progress",
+        );
+    }
+
+    #[test]
+    fn leaf_progress_distinguishes_progress_none_from_waiting() {
+        let progress_none = generic_progress(None);
+        assert_eq!(
+            progress_none.leaf_progress(),
+            LeafProgress::Progress(None),
+            "Progress with no counter maps to Progress(None)",
+        );
+        assert_eq!(
+            progress_none.progress_counter(),
+            None,
+            "Progress(None) has no progress counter",
+        );
+
+        let waiting = generic_waiting();
+        assert_eq!(
+            waiting.leaf_progress(),
+            LeafProgress::WaitingForProgress,
+            "WaitingForProgress maps to LeafProgress::WaitingForProgress",
+        );
+        assert_ne!(
+            waiting.leaf_progress(),
+            progress_none.leaf_progress(),
+            "WaitingForProgress is distinct from Progress(None)",
+        );
+    }
+
+    #[test]
+    fn leaf_progress_recurses_to_nested_waiting() {
+        let nested = nest(generic_waiting());
+        assert_eq!(
+            nested.leaf_progress(),
+            LeafProgress::WaitingForProgress,
+            "leaf_progress recurses through Nested to WaitingForProgress",
+        );
+        assert_eq!(
+            nested.progress_counter(),
+            None,
+            "nested WaitingForProgress has no progress counter",
+        );
+    }
+
+    #[test]
+    fn leaf_progress_unknown() {
+        let unknown = ProgressEventKind::<GenericSpec>::Unknown;
+        assert_eq!(
+            unknown.leaf_progress(),
+            LeafProgress::Unknown,
+            "Unknown maps to LeafProgress::Unknown",
+        );
+        assert_eq!(
+            unknown.progress_counter(),
+            None,
+            "Unknown has no progress counter",
+        );
     }
 
     // --- Schema tests (schemars08 feature) ---

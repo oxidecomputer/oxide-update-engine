@@ -3,6 +3,10 @@
 <!-- next-header -->
 ## Unreleased - ReleaseDate
 
+### Added
+
+- `ProgressEventKind::leaf_progress` returns progress for an event, recursing through `Nested` events. This is similar to `ProgressEventKind::progress_counter` except it distinguishes "waiting for progress" from "unknown progress".
+
 ## [0.1.1] - 2026-07-20
 
 ### Added
