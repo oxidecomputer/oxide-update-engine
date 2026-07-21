@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## Unreleased - ReleaseDate
 
+## [0.1.2] - 2026-07-21
+
 ### Added
 
 - `ProgressEventKind::leaf_progress` returns progress for an event, recursing through `Nested` events. This is similar to `ProgressEventKind::progress_counter` except it distinguishes "waiting for progress" from "unknown progress".
@@ -27,5 +29,6 @@ Initial extraction from the [omicron](https://github.com/oxidecomputer/omicron)
 repository.
 
 <!-- next-url -->
+[0.1.2]: https://github.com/oxidecomputer/oxide-update-engine/releases/tag/oxide-update-engine-0.1.2
 [0.1.1]: https://github.com/oxidecomputer/oxide-update-engine/releases/tag/oxide-update-engine-0.1.1
 [0.1.0]: https://github.com/oxidecomputer/oxide-update-engine/releases/tag/oxide-update-engine-0.1.0
