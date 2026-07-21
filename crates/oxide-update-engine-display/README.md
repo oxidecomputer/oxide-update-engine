@@ -12,10 +12,10 @@ Displayers for the update engine.
 
 Currently implemented are:
 
-* [`LineDisplay`](https://docs.rs/oxide-update-engine-display/0.1.1/oxide_update_engine_display/line_display/struct.LineDisplay.html): a line-oriented display suitable for the command
+* [`LineDisplay`](https://docs.rs/oxide-update-engine-display/0.1.2/oxide_update_engine_display/line_display/struct.LineDisplay.html): a line-oriented display suitable for the command
   line.
-* [`GroupDisplay`](https://docs.rs/oxide-update-engine-display/0.1.1/oxide_update_engine_display/group_display/struct.GroupDisplay.html): manages state and shows the results of several
-  [`LineDisplay`](https://docs.rs/oxide-update-engine-display/0.1.1/oxide_update_engine_display/line_display/struct.LineDisplay.html)s at once.
+* [`GroupDisplay`](https://docs.rs/oxide-update-engine-display/0.1.2/oxide_update_engine_display/group_display/struct.GroupDisplay.html): manages state and shows the results of several
+  [`LineDisplay`](https://docs.rs/oxide-update-engine-display/0.1.2/oxide_update_engine_display/line_display/struct.LineDisplay.html)s at once.
 * Some utility displayers which can be used to build custom
   displayers.
 <!-- cargo-sync-rdme ]] -->

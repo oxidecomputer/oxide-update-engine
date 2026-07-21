@@ -5,7 +5,7 @@
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 // Setting html_root_url allows cross-crate readme links to resolve. This
 // line is updated by cargo-release.
-#![doc(html_root_url = "https://docs.rs/oxide-update-engine-display/0.1.1")]
+#![doc(html_root_url = "https://docs.rs/oxide-update-engine-display/0.1.2")]
 
 //! Displayers for the update engine.
 //!
